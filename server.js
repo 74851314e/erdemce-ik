@@ -1,12 +1,12 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const url = require("url");
 
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 const HTML_FILE = path.join(__dirname, "index.html");
 
-/* ========== VERİ DEPOLAMA ========== */
 let useDB = false;
 let pool = null;
 
@@ -15,17 +15,17 @@ async function initStorage() {
     const { Pool } = require("pg");
     pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
     try {
-      await pool.query(`CREATE TABLE IF NOT EXISTS app_data (id INTEGER PRIMARY KEY DEFAULT 1, data JSONB NOT NULL DEFAULT '{}'::jsonb)`);
-      await pool.query(`INSERT INTO app_data (id, data) VALUES (1, '{}'::jsonb) ON CONFLICT (id) DO NOTHING`);
+      await pool.query("CREATE TABLE IF NOT EXISTS app_data (id INTEGER PRIMARY KEY DEFAULT 1, data JSONB NOT NULL DEFAULT '{}'::jsonb)");
+      await pool.query("INSERT INTO app_data (id, data) VALUES (1, '{}'::jsonb) ON CONFLICT (id) DO NOTHING");
       useDB = true;
       console.log("PostgreSQL baglantisi basarili.");
     } catch (e) {
       console.error("PostgreSQL hatasi:", e.message);
     }
   } else {
-    const DATA_FILE = path.join(__dirname, "data.json");
-    if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "{}", "utf8");
-    console.log("Dosya tabanli depolama (data.json) kullaniliyor.");
+    const f = path.join(__dirname, "data.json");
+    if (!fs.existsSync(f)) fs.writeFileSync(f, "{}", "utf8");
+    console.log("Dosya tabanli depolama kullaniliyor.");
   }
 }
 
@@ -45,14 +45,17 @@ async function saveData(data) {
   fs.writeFileSync(path.join(__dirname, "data.json"), JSON.stringify(data), "utf8");
 }
 
-/* ========== HTTP SUNUCU ========== */
 const server = http.createServer(async (req, res) => {
+  const parsed = url.parse(req.url, true);
+  const pathname = parsed.pathname;
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-  if (req.method === "GET" && req.url === "/api/data") {
+  // API: Veri oku
+  if (req.method === "GET" && pathname === "/api/data") {
     try {
       const data = await loadData();
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -64,7 +67,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "POST" && req.url === "/api/data") {
+  // API: Veri kaydet
+  if (req.method === "POST" && pathname === "/api/data") {
     let body = "";
     req.on("data", chunk => (body += chunk));
     req.on("end", async () => {
@@ -81,14 +85,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
+  // Diğer tüm GET istekleri → index.html sun
+  if (req.method === "GET") {
     try {
       const html = fs.readFileSync(HTML_FILE, "utf8");
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(html);
     } catch (e) {
-      res.writeHead(500);
-      res.end("index.html bulunamadi!");
+      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Hata: index.html dosyasi bulunamadi. Dosya yolu: " + HTML_FILE + " Hata: " + e.message);
     }
     return;
   }
@@ -100,5 +105,7 @@ const server = http.createServer(async (req, res) => {
 initStorage().then(() => {
   server.listen(PORT, () => {
     console.log("erdemCe v3.0 | Port: " + PORT + " | Depolama: " + (useDB ? "PostgreSQL" : "data.json"));
+    console.log("HTML dosyasi: " + HTML_FILE);
+    console.log("Dosya mevcut: " + fs.existsSync(HTML_FILE));
   });
 });
