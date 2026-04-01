@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İnsan Kaynakları ve Puantaj | Erdemce</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#eef1f5;font-family:'Inter',sans-serif;color:#1a1a1a;font-size:14px}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c4c4c4;border-radius:3px}
+button{font-family:'Inter',sans-serif}
+input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;color:#1a1a1a;background:#f6f7f9;border:1.5px solid #e5e7eb;padding:10px 14px;border-radius:8px;outline:none;width:100%;box-sizing:border-box}
+input:focus,select:focus{border-color:#0d7a6e;box-shadow:0 0 0 3px rgba(13,122,110,.1)}
+select{cursor:pointer}
+table{width:100%;border-collapse:collapse}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+@media print{
+  body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .no-print{display:none!important}
+  aside{display:none!important}
+  main{padding:0!important}
+  .bordro-print{border:none!important;border-radius:0!important}
+  .bordro-print table{font-size:9px!important}
+  .bordro-print td,.bordro-print th{padding:3px 2px!important;border:1px solid #bbb!important}
+  .bordro-title{border:none!important;border-radius:0!important;padding:10px 0!important;margin-bottom:8px!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef}=React;
+const C={sidebar:"#1a2e35",sidebarText:"#7fb8b0",orange:"#f97316",bg:"#eef1f5",card:"#fff",cardBrd:"#e2e6ea",teal:"#0d7a6e",tealDk:"#0b5e55",tealLt:"#e6f5f0",txt:"#1a1a1a",sec:"#6b7280",mut:"#9ca3af",brd:"#e5e7eb",brdLt:"#f3f4f6",red:"#ef4444",redBg:"#fef2f2",grn:"#10b981",grnBg:"#ecfdf5",blu:"#2563eb",pur:"#7c3aed",orgBg:"#fff7ed",yelBg:"#fefce8"};
+
+/* ICONS */
+function IcGrid(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
+function IcCal(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+function IcUsers(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+function IcCard(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>}
+function IcTable(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>}
+function IcDoc(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
+function IcFlag(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>}
+function IcGear(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>}
+function IcLog(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>}
+function IcLogout(){return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
+function IcLock(){return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+function IcTrash(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>}
+function IcPlus(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>}
+function IcEdit(){return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>}
+function IcChevL(){return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>}
+function IcChevR(){return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>}
+function IcPrint(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>}
+function IcDl(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>}
+function IcUl(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+function IcFilter(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d7a6e" strokeWidth="2" strokeLinecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>}
+function IcCheck(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+function IcSave(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>}
+function IcX(){return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
+function IcUserPlus(){return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}
+
+const icMap={grid:IcGrid,cal:IcCal,users:IcUsers,card:IcCard,table:IcTable,doc:IcDoc,flag:IcFlag,gear:IcGear,log:IcLog};
+const MODULES=[{key:"dashboard",label:"Yönetim Paneli"},{key:"puantaj",label:"Puantaj Tablosu"},{key:"personel",label:"Personel Kartları"},{key:"avans",label:"Ödeme-Tahsilat"},{key:"bordro",label:"Maaş / Bordro"},{key:"izin",label:"İzin Formları"},{key:"tatil",label:"Resmi Tatiller"},{key:"log",label:"İşlem Geçmişi"},{key:"ayarlar",label:"Ayarlar"}];
+const MENU=MODULES.map(m=>({...m,ic:m.key==="dashboard"?"grid":m.key==="puantaj"?"cal":m.key==="personel"?"users":m.key==="avans"?"card":m.key==="bordro"?"table":m.key==="izin"?"doc":m.key==="tatil"?"flag":m.key==="log"?"log":"gear"}));
+const PERMS=["gor","ekle","degistir","sil"];
+const PERM_LABELS={gor:"Görebilir",ekle:"Ekleyebilir",degistir:"Değiştirebilir",sil:"Silebilir"};
+
+const thS={padding:"10px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:C.sec,borderBottom:"1px solid "+C.brd,textTransform:"uppercase",letterSpacing:"0.04em",background:"#f8fafb"};
+const tdS={padding:"10px 12px",fontSize:13,borderBottom:"1px solid "+C.brdLt};
+function Btn({children,bg,color,onClick,full,disabled,style:sx}){return <button onClick={onClick} disabled={disabled} style={{padding:"10px 24px",background:disabled?"#d1d5db":(bg||C.teal),color:color||"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:disabled?"not-allowed":"pointer",display:"inline-flex",alignItems:"center",gap:6,width:full?"100%":"auto",justifyContent:full?"center":"flex-start",opacity:disabled?.6:1,...sx}}>{children}</button>}
+function BtnO({children,onClick,style:sx}){return <button onClick={onClick} style={{padding:"10px 20px",background:C.card,border:"1.5px solid "+C.brd,borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,color:C.txt,...sx}}>{children}</button>}
+function Badge({text,bg,color}){return <span style={{padding:"3px 10px",borderRadius:6,background:bg,color,fontSize:11,fontWeight:600,display:"inline-block"}}>{text}</span>}
+function Header({icon,title,sub,right}){return <div style={{background:C.card,borderRadius:12,padding:"18px 28px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",border:"1px solid "+C.cardBrd}}><div style={{display:"flex",alignItems:"center",gap:16}}><div style={{width:48,height:48,borderRadius:12,background:C.tealLt,display:"flex",alignItems:"center",justifyContent:"center",color:C.teal}}>{icon}</div><div><div style={{fontSize:22,fontWeight:700}}>{title}</div><div style={{fontSize:13,color:C.sec}}>{sub}</div></div></div>{right}</div>}
+function fmt(n){return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+/* DEFAULT DB */
+const defaultDB={
+  firms:["Mnl Gıda","İskan Gıda","Kantarcı Gıda","Demkan Gıda","Manolya Gıda"],
+  subs:["Sahrayıcedit","Suadiye","Çekmeköy","Bostancı","Kısıklı"],
+  bols:["Baklava","Börek","Çikolata","Dep-Gid-Tek","Hamur"],
+  gorevler:["Üretim Müdürü","Usta","Kalfa","Çırak","Mühendis","Teknisyen"],
+  durumlar:["S","E","K","."],
+  izinGunleri:["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","CP"],
+  employees:[
+    {id:1,name:"AHMET ÇİMEN",gorev:"Usta",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Börek",maas:78000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2021-03-15",istenCikis:"",kidem:"2021-03-15",dogumGunu:"1990-08-20"},
+    {id:2,name:"ALİ ÇİMEN",gorev:"Kalfa",firma:"Mnl Gıda",sube:"Suadiye",bolum:"Çikolata",maas:38000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2022-06-01",istenCikis:"",kidem:"2022-06-01",dogumGunu:"1995-12-03"},
+    {id:3,name:"ALİ ESKİYAYLA",gorev:"Çırak",firma:"Mnl Gıda",sube:"Çekmeköy",bolum:"Hamur",maas:110000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2023-09-10",istenCikis:"",kidem:"2023-09-10",dogumGunu:"2000-03-25"},
+    {id:4,name:"DURSUNALİ ERDEM",gorev:"Üretim Müdürü",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Baklava",maas:110000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2020-01-01",istenCikis:"",kidem:"2020-01-01",dogumGunu:"1985-05-15"},
+  ],
+  nextEmpId:5,
+  avanslar:[{id:1,date:"2026-03-20",empId:4,type:"Avans",amount:5000,note:""},{id:2,date:"2026-03-20",empId:4,type:"Maaş Haczi",amount:5000,note:""}],
+  nextAvansId:3,
+  holidays:[{id:1,n:"Yılbaşı (2026)",s:"2026-01-01",e:"2026-01-01"},{id:2,n:"Ulusal Egemenlik ve Çocuk B.",s:"2026-04-23",e:"2026-04-23"},{id:3,n:"Emek ve Dayanışma G.",s:"2026-05-01",e:"2026-05-01"},{id:4,n:"Atatürk'ü Anma, Gençlik B.",s:"2026-05-19",e:"2026-05-19"},{id:5,n:"Demokrasi ve Milli Birlik G.",s:"2026-07-15",e:"2026-07-15"},{id:6,n:"Zafer Bayramı",s:"2026-08-30",e:"2026-08-30"},{id:7,n:"Cumhuriyet Bayramı",s:"2026-10-29",e:"2026-10-29"},{id:8,n:"Ramazan Bayramı",s:"2026-03-20",e:"2026-03-22"},{id:9,n:"Kurban Bayramı",s:"2026-05-27",e:"2026-05-30"}],
+  nextHolId:10,
+  leaves:[{id:1,empId:4,type:"Yİ",start:"2026-03-10",end:"2026-03-15",days:5,note:"",approver:""}],
+  nextLeaveId:2,
+  puantajCells:{},
+  puantajSaat:{},
+  puantajNotes:{},
+  users:[
+    {id:1,name:"admin",pass:"123456",role:"admin",perms:{}},
+    {id:2,name:"yonetici",pass:"123456",role:"yonetici",firmalar:[],subeler:[],perms:{dashboard:{gor:true,ekle:true,degistir:true,sil:true},puantaj:{gor:true,ekle:true,degistir:true,sil:true},personel:{gor:true,ekle:true,degistir:true,sil:true},avans:{gor:true,ekle:true,degistir:true,sil:true},bordro:{gor:true,ekle:true,degistir:false,sil:false},izin:{gor:true,ekle:true,degistir:true,sil:true},tatil:{gor:true,ekle:false,degistir:false,sil:false},ayarlar:{gor:false,ekle:false,degistir:false,sil:false}}},
+    {id:3,name:"kullanici",pass:"123456",role:"kullanici",firmalar:["Mnl Gıda"],subeler:["Sahrayıcedit"],perms:{dashboard:{gor:true,ekle:false,degistir:false,sil:false},puantaj:{gor:true,ekle:false,degistir:false,sil:false},personel:{gor:true,ekle:false,degistir:false,sil:false},avans:{gor:true,ekle:false,degistir:false,sil:false},bordro:{gor:true,ekle:false,degistir:false,sil:false},izin:{gor:true,ekle:false,degistir:false,sil:false},tatil:{gor:true,ekle:false,degistir:false,sil:false},ayarlar:{gor:false,ekle:false,degistir:false,sil:false}}}
+  ],
+  nextUserId:4,
+  bordroManual:{},
+  bordroKapali:{},
+  bordroDevir:{},
+  bordroSnapshot:{},
+  logs:[],
+};
+
+/* VERİ DEPOLAMA — Sunucu üzerinden otomatik kayıt, tüm tarayıcılar aynı veriyi görür */
+let _saveTimer=null;
+function loadDB(){return defaultDB;} /* İlk yükleme — sunucudan veri useEffect ile gelecek */
+function saveDB(db){
+  /* Debounced: Her değişiklikte 300ms bekle, sonra sunucuya kaydet */
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>{
+    fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db)}).catch(()=>{});
+  },300);
+}
+
+/* EDITABLE LIST */
+function EditableList({title,items,onAdd,onDelete,onEdit,canAdd,canEdit,canDel}){
+  const [val,setVal]=useState("");
+  const [editId,setEditId]=useState(null);
+  const [editVal,setEditVal]=useState("");
+  return <div style={{background:C.card,borderRadius:12,padding:"20px 24px",border:"1px solid "+C.cardBrd}}>
+    <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>{title}</div>
+    {canAdd!==false&&<div style={{display:"flex",gap:8,marginBottom:14}}>
+      <input value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&val.trim()){onAdd(val.trim());setVal("");}}} placeholder="Yeni ekle..." style={{flex:1}}/>
+      <button onClick={()=>{if(val.trim()){onAdd(val.trim());setVal("");}}} style={{width:36,height:40,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
+    </div>}
+    {items.map((item,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:i<items.length-1?"1px solid "+C.brdLt:"none"}}>
+      {editId===i?<div style={{display:"flex",gap:6,flex:1,alignItems:"center"}}>
+        <input value={editVal} onChange={e=>setEditVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){onEdit(i,editVal);setEditId(null);}}} style={{flex:1,padding:"6px 10px",fontSize:13}} autoFocus/>
+        <button onClick={()=>{onEdit(i,editVal);setEditId(null);}} style={{background:"none",border:"none",cursor:"pointer",color:C.grn}}><IcCheck/></button>
+        <button onClick={()=>setEditId(null)} style={{background:"none",border:"none",cursor:"pointer",color:C.red}}><IcX/></button>
+      </div>:<>
+        <span style={{fontSize:13}}>{item}</span>
+        <span style={{display:"inline-flex",gap:6,alignItems:"center"}}>
+          {canEdit!==false&&<button onClick={()=>{setEditId(i);setEditVal(item);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+          {canDel!==false&&<button onClick={()=>onDelete(i)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
+        </span>
+      </>}
+    </div>)}
+    {items.length===0&&<div style={{fontSize:12,color:C.mut,textAlign:"center",padding:12}}>Henüz kayıt yok</div>}
+  </div>;
+}
+
+/* LOGIN */
+function Login({users,onLogin}){
+  const [name,setName]=useState("");
+  const [pass,setPass]=useState("");
+  const [err,setErr]=useState("");
+  const handle=()=>{const u=users.find(x=>x.name===name&&x.pass===pass);if(u){onLogin(u);}else{setErr("Kullanıcı adı veya parola hatalı!");}};
+  return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse at 30% 50%,#1a3c3c 0%,#162c30 40%,#0f1e22 100%)"}}>
+    <div style={{width:420,background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
+      <div style={{height:8,background:"linear-gradient(90deg,#0d7a6e 0%,#22c55e 30%,#eab308 60%,#f97316 100%)"}}/>
+      <div style={{padding:"40px 48px 36px",textAlign:"center"}}>
+        <div style={{fontFamily:"Georgia,serif",fontSize:36,fontStyle:"italic",color:C.tealDk,marginBottom:6}}>erdemCe</div>
+        <div style={{fontSize:13,color:C.mut,letterSpacing:"0.15em",marginBottom:32,textTransform:"uppercase"}}>İnsan Kaynakları v3.0</div>
+        <div style={{textAlign:"left",marginBottom:18}}>
+          <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Kullanıcı Kodu</div>
+          <input value={name} onChange={e=>{setName(e.target.value);setErr("");}}/>
+        </div>
+        <div style={{textAlign:"left",marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Parola</div>
+          <input type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}} onKeyDown={e=>{if(e.key==="Enter")handle();}}/>
+        </div>
+        {err&&<div style={{color:C.red,fontSize:12,marginBottom:12,textAlign:"left"}}>{err}</div>}
+        <Btn full bg={C.teal} onClick={handle} style={{padding:14,fontSize:15,borderRadius:10,marginTop:8}}><IcLock/> Sistemi Aç</Btn>
+        <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid #eee"}}>
+          <button onClick={()=>{if(confirm("Tüm veriler sıfırlanacak ve varsayılan ayarlara dönülecek. Emin misiniz?")){fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(()=>window.location.reload());}}} style={{background:"none",border:"none",color:C.mut,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Veritabanını Sıfırla</button>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* MAIN APP */
+function App(){
+  const [db,setDbRaw]=useState(loadDB);
+  const [loading,setLoading]=useState(true);
+  const [curUser,setCurUser]=useState(null);
+  const [page,setPage]=useState("dashboard");
+  const [sideOpen,setSideOpen]=useState(true);
+  /* GLOBAL FILTER STATES - persist across re-renders */
+  const [pSearch,setPSearch]=useState("");const [pFirma,setPFirma]=useState("");const [pSube,setPSube]=useState("");
+  const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);
+  const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");
+  const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
+  const fileRef=useRef();
+
+  /* Sunucudan veri yükle — uygulama açıldığında bir kez çalışır */
+  useEffect(()=>{
+    fetch("/api/data").then(r=>r.json()).then(data=>{
+      setDbRaw({...defaultDB,...data});
+      setLoading(false);
+    }).catch(()=>setLoading(false));
+  },[]);
+
+  const setDb=(updater,logEntry)=>{setDbRaw(prev=>{const next=typeof updater==="function"?updater(prev):{...prev,...updater};if(logEntry&&curUser){const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,...logEntry};next.logs=[log,...(next.logs||[])].slice(0,500);}saveDB(next);return next;});};
+  const addLog=(action,detail)=>({action,detail});
+  const D=db;
+
+  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse at 30% 50%,#1a3c3c 0%,#162c30 40%,#0f1e22 100%)"}}><div style={{textAlign:"center",color:"#fff"}}><div style={{fontFamily:"Georgia,serif",fontSize:36,fontStyle:"italic",marginBottom:16,opacity:.7}}>erdemCe</div><div style={{fontSize:14,opacity:.5}}>Veriler yükleniyor...</div></div></div>;
+
+  /* Kullanıcı DB'den güncellendiğinde curUser'ı senkronize et */
+  useEffect(()=>{
+    if(curUser){
+      const latest=D.users.find(u=>u.id===curUser.id);
+      if(latest&&JSON.stringify(latest)!==JSON.stringify(curUser))setCurUser(latest);
+    }
+  },[D.users]);
+  /* Giriş yapıldığında log tut */
+  const prevUserRef=useRef(null);
+  useEffect(()=>{
+    if(curUser&&!prevUserRef.current){
+      setDbRaw(prev=>{const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,action:"Giriş Yapıldı",detail:"Sisteme giriş yapıldı"};const next={...prev,logs:[log,...(prev.logs||[])].slice(0,500)};saveDB(next);return next;});
+    }
+    prevUserRef.current=curUser;
+  },[curUser]);
+  const sortedEmps=useMemo(()=>[...D.employees].sort((a,b)=>a.name.localeCompare(b.name,"tr")),[D.employees]);
+  const activeEmps=sortedEmps.filter(e=>e.durum!=="K");
+  const empName=(id)=>{const e=D.employees.find(x=>x.id===id);return e?e.name:"?";};
+
+  /* PERMISSIONS */
+  function can(perm,mod){
+    if(!curUser)return false;
+    if(curUser.role==="admin")return true;
+    const p=curUser.perms;
+    return p&&p[mod||page]&&p[mod||page][perm];
+  }
+
+  /* FIRMA/ŞUBE YETKİ FİLTRESİ */
+  function canAccessEmp(emp){
+    if(!curUser)return false;
+    if(curUser.role==="admin")return true;
+    const uf=curUser.firmalar||[];
+    const us=curUser.subeler||[];
+    if(uf.length>0&&!uf.includes(emp.firma))return false;
+    if(us.length>0&&!us.includes(emp.sube))return false;
+    return true;
+  }
+  const userFirms=useMemo(()=>{
+    if(!curUser||curUser.role==="admin")return D.firms;
+    const uf=curUser.firmalar||[];
+    return uf.length>0?D.firms.filter(f=>uf.includes(f)):D.firms;
+  },[D.firms,curUser]);
+  const userSubs=useMemo(()=>{
+    if(!curUser||curUser.role==="admin")return D.subs;
+    const us=curUser.subeler||[];
+    return us.length>0?D.subs.filter(s=>us.includes(s)):D.subs;
+  },[D.subs,curUser]);
+  const filteredSortedEmps=useMemo(()=>sortedEmps.filter(canAccessEmp),[sortedEmps,curUser]);
+  const filteredActiveEmps=filteredSortedEmps.filter(e=>e.durum!=="K");
+
+  /* PUANTAJ HELPERS — DİNAMİK DÖNEM */
+  const now=new Date();
+  const [pYear,setPYear]=useState(now.getFullYear());
+  const [pMonth,setPMonth]=useState(now.getMonth());
+  const pDays=new Date(pYear,pMonth+1,0).getDate();
+  const months=["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
+  const donemLabel=months[pMonth]+" "+pYear;
+  const donemKey=pYear+"-"+String(pMonth+1).padStart(2,"0");
+  function prevDonemKey(){const pm=pMonth===0?11:pMonth-1;const py=pMonth===0?pYear-1:pYear;return py+"-"+String(pm+1).padStart(2,"0");}
+  function nextDonemKey(){const nm=pMonth===11?0:pMonth+1;const ny=pMonth===11?pYear+1:pYear;return ny+"-"+String(nm+1).padStart(2,"0");}
+  function goPrev(){if(pMonth===0){setPMonth(11);setPYear(pYear-1);}else setPMonth(pMonth-1);}
+  function goNext(){if(pMonth===11){setPMonth(0);setPYear(pYear+1);}else setPMonth(pMonth+1);}
+  /* Dönem bazlı key oluşturucular */
+  function pKey(empId,day){return donemKey+"|"+empId+"-"+day;}
+  function bKey(empId){return donemKey+"|"+empId;}
+  const izinDowMap={"Pazar":[0],"Pazartesi":[1],"Salı":[2],"Çarşamba":[3],"Perşembe":[4],"Cuma":[5],"Cumartesi":[6],"CP":[0,6]};
+  function isIzinDay(emp,day){const dows=izinDowMap[emp.izin]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
+  function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
+  function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
+  function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
+  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=30+Math.min(0,mesai);return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun};}
+
+  /* BORDRO */
+  function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
+  function isEmpKapali(emp){return isKapali(emp.firma,emp.sube);}
+  const bordroData=useMemo(()=>filteredActiveEmps.map(emp=>{
+    const ps=getPSummary(emp);
+    const snapKey=bKey(emp.id);
+    const snap=D.bordroSnapshot[snapKey];
+    const kapali=isEmpKapali(emp);
+    const maas=kapali&&snap?Number(snap.maas):Number(emp.maas);
+    const yol=kapali&&snap?Number(snap.yol):Number(emp.yol);
+    const avans1=kapali&&snap?Number(snap.sabitAvans)||0:Number(emp.sabitAvans)||0;
+    const gunlukUcret=maas/30;const saatUcreti=gunlukUcret/7.5;
+    const mesaiT=(ps.saat*saatUcreti)+(ps.mesai*gunlukUcret)+(ps.fm*gunlukUcret)+(ps.rt*gunlukUcret);
+    const maasT=maas+yol+mesaiT;
+    const m=D.bordroManual[bKey(emp.id)]||{};
+    const banka=Number(m.banka)||0;const bes=Number(m.bes)||0;const odenen=Number(m.odenen)||0;
+    /* Avansları dönem tarihine göre filtrele */
+    const dStart=donemKey+"-01";const dEnd=donemKey+"-"+String(pDays).padStart(2,"0");
+    const ea=D.avanslar.filter(a=>a.empId===emp.id&&a.date>=dStart&&a.date<=dEnd);
+    const a2=ea.filter(a=>a.type==="Avans").reduce((s,a)=>s+a.amount,0);
+    const ur=ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0);
+    const ke=ea.filter(a=>a.type==="Maaş Haczi"||a.type==="İcra").reduce((s,a)=>s+a.amount,0);
+    const devirPlus=ea.filter(a=>a.type==="Devir+").reduce((s,a)=>s+a.amount,0);
+    const devirMinus=ea.filter(a=>a.type==="Devir-").reduce((s,a)=>s+a.amount,0);
+    const yatan=banka-bes-avans1-ke;
+    const elden=maasT-banka;
+    /* Devir: Bu dönem için kaydedilmiş devir (önceki dönemden aktarılan kalan) */
+    const devir=(Number(D.bordroDevir[bKey(emp.id)])||0)+devirPlus-devirMinus;
+    const kalan=elden+devir-a2-ur-odenen;
+    return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
+  }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
+
+  /* BACKUP / RESTORE */
+  async function handleBackup(){
+    const content=JSON.stringify(D,null,2);const blob=new Blob([content],{type:"application/json"});
+    const fname="erdemce_yedek_"+new Date().toISOString().slice(0,10)+".json";
+    if(window.showSaveFilePicker){
+      try{const fh=await window.showSaveFilePicker({suggestedName:fname,types:[{description:"JSON Dosyası",accept:{"application/json":[".json"]}}]});const ws=await fh.createWritable();await ws.write(blob);await ws.close();alert("Yedek başarıyla kaydedildi!");}catch(e){if(e.name!=="AbortError")alert("Kaydetme hatası: "+e.message);}
+    }else{const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fname;a.click();URL.revokeObjectURL(url);}
+  }
+  function handleRestore(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(ev)=>{try{const data=JSON.parse(ev.target.result);setDb(prev=>({...defaultDB,...data}),addLog("Yedek Yüklendi",file.name));alert("Yedek başarıyla yüklendi!");}catch(err){alert("Geçersiz dosya!");}};reader.readAsText(file);}
+
+  if(!curUser)return <Login users={D.users} onLogin={setCurUser}/>;
+
+  /* LIST OPS */
+  const listOps=(field)=>({
+    onAdd:(v)=>setDb(p=>({...p,[field]:[...p[field],v]}),addLog("Tanım Eklendi",field+": "+v)),
+    onDelete:(i)=>{const val=D[field][i];setDb(p=>({...p,[field]:p[field].filter((_,idx)=>idx!==i)}),addLog("Tanım Silindi",field+": "+val));},
+    onEdit:(i,v)=>{const old=D[field][i];setDb(p=>{const n=[...p[field]];n[i]=v;return{...p,[field]:n};},addLog("Tanım Düzenlendi",field+": "+old+" → "+v));},
+  });
+
+  /* ===== PAGES ===== */
+
+  /* DASHBOARD */
+  function DashboardPage(){
+    const totalMaas=bordroData.reduce((s,b)=>s+b.maasT,0);
+    const totalAvans=D.avanslar.filter(a=>a.type==="Avans"&&filteredActiveEmps.some(e=>e.id===a.empId)).reduce((s,a)=>s+a.amount,0);
+    const stats=[{Ic:IcUsers,l:"Aktif Personel",v:String(filteredActiveEmps.length)},{Ic:IcTable,l:"Tahmini Maaş Yükü",v:fmt(totalMaas)+" ₺"},{Ic:IcCard,l:"Avans Çıkışları",v:fmt(totalAvans)+" ₺"},{Ic:IcDoc,l:"Onaylı İzinler",v:String(D.leaves.filter(l=>filteredActiveEmps.some(e=>e.id===l.empId)).length)}];
+    return <div><Header icon={<IcGrid/>} title="Yönetim Paneli" sub="Sistem özeti ve genel durum"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>{stats.map((st,i)=><div key={i} style={{background:C.card,borderRadius:12,padding:"20px 24px",border:"1px solid "+C.cardBrd}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,color:C.teal,fontSize:13,fontWeight:500}}><st.Ic/> {st.l}</div><div style={{fontSize:28,fontWeight:800}}>{st.v}</div></div>)}</div>
+      <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd}}><div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Hızlı İşlemler</div><div style={{display:"flex",gap:12}}>{[["Puantaja Git","puantaj"],["Yeni Personel Ekle","personel"],["Maaşları Hesapla","bordro"]].map(([l,k])=><button key={k} onClick={()=>setPage(k)} style={{padding:"10px 24px",borderRadius:8,border:"1.5px solid "+C.teal,background:C.tealLt,color:C.teal,fontSize:13,fontWeight:600,cursor:"pointer"}}>{l}</button>)}</div></div>
+    </div>;
+  }
+
+  /* PERSONEL */
+  function PersonelPage(){
+    const empty={name:"",gorev:"",firma:"",sube:"",bolum:"",maas:0,yol:0,sabitAvans:0,izin:"Pazar",durum:"S",iseGiris:"",istenCikis:"",kidem:"",dogumGunu:""};
+    const [form,setForm]=useState(empty);const [editId,setEditId]=useState(null);const f=(k,v)=>setForm({...form,[k]:v});
+    const csvRef=useRef();
+    const [importResult,setImportResult]=useState(null);
+    /* BULK UPDATE */
+    const [selected,setSelected]=useState({});
+    const [bulkField,setBulkField]=useState("");
+    const [bulkVal,setBulkVal]=useState("");
+    const [showBulk,setShowBulk]=useState(false);
+
+    const filteredEmps=filteredSortedEmps.filter(e=>{
+      if(pSearch&&!e.name.toLowerCase().includes(pSearch.toLowerCase()))return false;
+      if(pFirma&&e.firma!==pFirma)return false;
+      if(pSube&&e.sube!==pSube)return false;
+      return true;
+    });
+    const selCount=Object.values(selected).filter(Boolean).length;
+    const allSelected=filteredEmps.length>0&&filteredEmps.every(e=>selected[e.id]);
+    function toggleAll(){if(allSelected){setSelected({});}else{const s={};filteredEmps.forEach(e=>{s[e.id]=true;});setSelected(s);}}
+    function toggleOne(id){setSelected({...selected,[id]:!selected[id]});}
+
+    const bulkFields=[{k:"firma",l:"Firma",opts:D.firms},{k:"sube",l:"Şube",opts:D.subs},{k:"bolum",l:"Bölüm",opts:D.bols},{k:"gorev",l:"Görev",opts:D.gorevler},{k:"durum",l:"Durum",opts:D.durumlar},{k:"izin",l:"İzin Günü",opts:D.izinGunleri}];
+    function applyBulk(){
+      if(!bulkField||!bulkVal)return alert("Alan ve değer seçin!");
+      const ids=Object.keys(selected).filter(k=>selected[k]).map(Number);
+      if(ids.length===0)return alert("Personel seçin!");
+      if(!confirm(ids.length+" personelin "+bulkFields.find(f=>f.k===bulkField)?.l+" alanı '"+bulkVal+"' olarak güncellenecek. Onaylıyor musunuz?"))return;
+      setDb(p=>({...p,employees:p.employees.map(e=>ids.includes(e.id)?{...e,[bulkField]:bulkVal}:e)}),addLog("Toplu Güncelleme",ids.length+" personel → "+bulkFields.find(f=>f.k===bulkField)?.l+": "+bulkVal));
+      setSelected({});setBulkVal("");setShowBulk(false);
+    }
+
+    const save=()=>{if(!form.name.trim())return alert("Ad Soyad zorunlu!");
+      if(editId){setDb(p=>({...p,employees:p.employees.map(e=>e.id===editId?{...form,id:editId,maas:Number(form.maas),yol:Number(form.yol),sabitAvans:Number(form.sabitAvans)}:e)}),addLog("Personel Güncellendi",form.name));setEditId(null);}
+      else{setDb(p=>({...p,employees:[...p.employees,{...form,id:p.nextEmpId,maas:Number(form.maas),yol:Number(form.yol),sabitAvans:Number(form.sabitAvans)}],nextEmpId:p.nextEmpId+1}),addLog("Personel Eklendi",form.name));}
+      setForm(empty);};
+    const del=(id)=>{const emp=D.employees.find(e=>e.id===id);if(confirm("Personel silinsin mi?"))setDb(p=>({...p,employees:p.employees.filter(e=>e.id!==id)}),addLog("Personel Silindi",emp?emp.name:"#"+id));};
+
+    function downloadTemplate(){
+      const header="Ad Soyad;Görev;Firma;Şube;Bölüm;Aylık Maaş;Yol;Sabit Avans;İzin Günü;Durum;İşe Giriş;Kıdem Tarihi;Doğum Günü;İşten Çıkış";
+      const sample="AHMET YILMAZ;Mühendis;Mnl Gıda;Sahrayıcedit;Baklava;15000;2000;5000;Pazar;S;2024-01-15;2024-01-15;1990-05-20;";
+      const bom="\uFEFF";
+      const blob=new Blob([bom+header+"\n"+sample+"\n"],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="personel_sablon.csv";a.click();URL.revokeObjectURL(url);
+    }
+
+    function handleCSVUpload(e){
+      const file=e.target.files[0];if(!file)return;
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const text=ev.target.result;
+        const lines=text.split(/\r?\n/).filter(l=>l.trim());
+        if(lines.length<2){alert("Dosyada veri bulunamadı!");return;}
+        const sep=lines[0].includes(";")?";":lines[0].includes("\t")?"\t":",";
+        const headers=lines[0].split(sep).map(h=>h.trim().replace(/^["']|["']$/g,""));
+        const hMap={};
+        const aliases={"ad soyad":"name","adsoyad":"name","ad":"name","isim":"name","görev":"gorev","gorev":"gorev","firma":"firma","şube":"sube","sube":"sube","bölüm":"bolum","bolum":"bolum","aylık maaş":"maas","aylik maas":"maas","maaş":"maas","maas":"maas","yol":"yol","sabit avans":"sabitAvans","avans":"sabitAvans","izin günü":"izin","izin gunu":"izin","izin":"izin","durum":"durum","işe giriş":"iseGiris","ise giris":"iseGiris","kıdem tarihi":"kidem","kidem tarihi":"kidem","kidem":"kidem","doğum günü":"dogumGunu","dogum gunu":"dogumGunu","işten çıkış":"istenCikis","isten cikis":"istenCikis"};
+        headers.forEach((h,i)=>{const key=aliases[h.toLowerCase()];if(key)hMap[key]=i;});
+        if(hMap.name===undefined){alert("'Ad Soyad' sütunu bulunamadı! Şablonu indirip kullanın.");return;}
+        const newEmps=[];let skipped=0;
+        for(let i=1;i<lines.length;i++){
+          const cols=lines[i].split(sep).map(c=>c.trim().replace(/^["']|["']$/g,""));
+          const name=cols[hMap.name]||"";
+          if(!name){skipped++;continue;}
+          newEmps.push({name:name.toUpperCase(),gorev:cols[hMap.gorev]||"",firma:cols[hMap.firma]||"",sube:cols[hMap.sube]||"",bolum:cols[hMap.bolum]||"",
+            maas:Number(String(cols[hMap.maas]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
+            yol:Number(String(cols[hMap.yol]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
+            sabitAvans:Number(String(cols[hMap.sabitAvans]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
+            izin:cols[hMap.izin]||"Pazar",durum:cols[hMap.durum]||"S",iseGiris:cols[hMap.iseGiris]||"",istenCikis:cols[hMap.istenCikis]||"",kidem:cols[hMap.kidem]||"",dogumGunu:cols[hMap.dogumGunu]||""});
+        }
+        if(newEmps.length===0){alert("Geçerli kayıt bulunamadı!");return;}
+        setDb(p=>{let nid=p.nextEmpId;const added=newEmps.map(emp=>({...emp,id:nid++}));return{...p,employees:[...p.employees,...added],nextEmpId:nid};},addLog("CSV İçe Aktarıldı",newEmps.length+" personel eklendi"));
+        setImportResult({added:newEmps.length,skipped});
+        setTimeout(()=>setImportResult(null),5000);
+      };
+      reader.readAsText(file,"UTF-8");e.target.value="";
+    }
+
+    return <div><Header icon={<IcUserPlus/>} title="Personel Kartları" sub="Yeni personel ekleme, düzenleme ve toplu güncelleme"/>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:20}}>{editId?"Personel Düzenle":"Yeni Personel Ekle"}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{D.gorevler.map(g=><option key={g}>{g}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>f("firma",e.target.value)}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{userSubs.map(x=><option key={x}>{x}</option>)}</select></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{D.bols.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Aylık Maaş (₺)</div><input type="number" value={form.maas} onChange={e=>f("maas",e.target.value)}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yol Vb. Ek (₺)</div><input type="number" value={form.yol} onChange={e=>f("yol",e.target.value)}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Sabit Avans (Aylık) (₺)</div><input type="number" value={form.sabitAvans} onChange={e=>f("sabitAvans",e.target.value)}/></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>İzin Günü</div><select value={form.izin} onChange={e=>f("izin",e.target.value)}>{D.izinGunleri.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Durum</div><select value={form.durum} onChange={e=>f("durum",e.target.value)}>{D.durumlar.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>İşe Giriş Tarihi</div><input type="date" value={form.iseGiris} onChange={e=>f("iseGiris",e.target.value)}/></div>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>Kıdem T. (Tarih)</div><input type="date" value={form.kidem} onChange={e=>f("kidem",e.target.value)}/></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>Doğum Günü</div><input type="date" value={form.dogumGunu} onChange={e=>f("dogumGunu",e.target.value)}/></div>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>İşten Çıkış Tarihi</div><input type="date" value={form.istenCikis} onChange={e=>f("istenCikis",e.target.value)}/></div>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <Btn full bg={editId?C.blu:C.teal} onClick={save} style={{padding:14,fontSize:15,borderRadius:10}}>{editId?<><IcSave/> Güncelle</>:"Personeli Ekle"}</Btn>
+          {editId&&<Btn bg="#6b7280" onClick={()=>{setEditId(null);setForm(empty);}} style={{padding:14,borderRadius:10}}><IcX/> İptal</Btn>}
+        </div>
+      </div>}
+      {/* LISTE BAŞLIK + CSV */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div style={{fontSize:16,fontWeight:700}}>Personel Listesi ({filteredEmps.length}/{filteredSortedEmps.length})</div>
+        {can("ekle")&&<div style={{display:"flex",gap:10}}>
+          <BtnO onClick={downloadTemplate}><IcDl/> Şablon İndir (CSV)</BtnO>
+          <Btn bg={C.blu} onClick={()=>csvRef.current?.click()} style={{fontSize:13}}><IcUl/> CSV Yükle</Btn>
+          <input ref={csvRef} type="file" accept=".csv,.txt,.xls,.xlsx" onChange={handleCSVUpload} style={{display:"none"}}/>
+        </div>}
+      </div>
+      {importResult&&<div style={{background:C.grnBg,border:"1px solid #bbf7d0",borderRadius:8,padding:"12px 16px",marginBottom:12,fontSize:13,color:C.grn}}>
+        <strong>{importResult.added} personel başarıyla içe aktarıldı.</strong>{importResult.skipped>0&&<span style={{color:C.mut}}> ({importResult.skipped} satır atlandı)</span>}
+      </div>}
+      {/* SÜZME */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/>
+        <input placeholder="Personel Ara..." value={pSearch} onChange={e=>setPSearch(e.target.value)} style={{width:180}}/>
+        <select value={pFirma} onChange={e=>setPFirma(e.target.value)} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(x=><option key={x} value={x}>{x}</option>)}</select>
+        <select value={pSube} onChange={e=>setPSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{userSubs.map(x=><option key={x} value={x}>{x}</option>)}</select>
+        <div style={{flex:1}}/>
+        <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+      </div>
+      {/* TOPLU GÜNCELLEME */}
+      {can("degistir")&&<div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,border:"1px solid "+(selCount>0?C.blu:C.cardBrd),display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <span style={{fontSize:13,fontWeight:600,color:selCount>0?C.blu:C.sec}}>{selCount>0?selCount+" personel seçili":"Toplu güncelleme için personel seçin (checkbox)"}</span>
+        <div style={{flex:1}}/>
+        {selCount>0&&<>
+          <select value={bulkField} onChange={e=>{setBulkField(e.target.value);setBulkVal("");}} style={{width:140}}><option value="">Alan seç...</option>{bulkFields.map(bf=><option key={bf.k} value={bf.k}>{bf.l}</option>)}</select>
+          {bulkField&&<select value={bulkVal} onChange={e=>setBulkVal(e.target.value)} style={{width:160}}><option value="">Değer seç...</option>{(bulkFields.find(bf=>bf.k===bulkField)?.opts||[]).map(v=><option key={v} value={v}>{v}</option>)}</select>}
+          {bulkVal&&<Btn bg={C.blu} onClick={applyBulk} style={{fontSize:12,padding:"8px 16px"}}><IcCheck/> Uygula</Btn>}
+        </>}
+      </div>}
+      {/* TABLO */}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}}>
+        <table><thead><tr>
+          {can("degistir")&&<th style={{...thS,width:36,textAlign:"center"}}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{width:"auto",cursor:"pointer"}}/></th>}
+          {["Ad Soyad","Görev","Firma","Şube","Maaş","İzin","Kıdem T.","D.Günü","Durum","İşlem"].map(h=><th key={h} style={thS}>{h}</th>)}
+        </tr></thead>
+        <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":e.durum==="K"?"#f3e8ff":"transparent";return <tr key={e.id} style={{background:rBg}}>
+          {can("degistir")&&<td style={{...tdS,textAlign:"center",width:36}}><input type="checkbox" checked={!!selected[e.id]} onChange={()=>toggleOne(e.id)} style={{width:"auto",cursor:"pointer"}}/></td>}
+          <td style={{...tdS,fontWeight:600}}>{e.name}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.gorev}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.firma}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.sube}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>₺{Number(e.maas).toLocaleString("tr-TR")}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.izin}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.kidem||"-"}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.dogumGunu||"-"}</td>
+          <td style={tdS}><Badge text={e.durum} bg={e.durum==="S"?"#f3f4f6":e.durum==="E"?C.grnBg:e.durum==="K"?"#ede9fe":C.yelBg} color={e.durum==="S"?C.sec:e.durum==="E"?C.grn:e.durum==="K"?C.pur:"#a16207"}/></td>
+          <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
+            {can("degistir")&&<button onClick={()=>{setForm({...e});setEditId(e.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+            {can("sil")&&<button onClick={()=>del(e.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
+          </span></td>
+        </tr>;})}</tbody></table>
+        {filteredEmps.length===0&&<div style={{padding:24,textAlign:"center",color:C.mut}}>Filtreye uygun personel bulunamadı</div>}
+      </div>
+    </div>;
+  }
+
+  /* ÖDEME-TAHSİLAT */
+  function AvansPage(){
+    const [af,setAf]=useState({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});
+    const add=()=>{if(!af.empId||!af.amount)return alert("Personel ve Tutar zorunlu!");setDb(p=>({...p,avanslar:[...p.avanslar,{id:p.nextAvansId,date:af.date,empId:Number(af.empId),type:af.type,amount:Number(af.amount),note:af.note}],nextAvansId:p.nextAvansId+1}),addLog(af.type+" Eklendi",empName(Number(af.empId))+" → "+af.amount+" ₺"));setAf({...af,amount:"",note:""});};
+    function typeBadge(t){if(t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};return{bg:C.redBg,cl:C.red};}
+    return <div><Header icon={<IcCard/>} title="Ödeme-Tahsilat" sub="Avans, Ürün, Devir ve kesinti işlemleri"/>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
+          <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel *</div><select value={af.empId} onChange={e=>setAf({...af,empId:e.target.value})}><option value="">Seçiniz...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans</option><option>Ürün</option><option>Maaş Haczi</option><option>İcra</option><option>Devir+</option><option>Devir-</option></select></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tutar *</div><input type="text" inputMode="decimal" value={af.amount} onChange={e=>setAf({...af,amount:e.target.value})}/></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tarih *</div><input type="date" value={af.date} onChange={e=>setAf({...af,date:e.target.value})}/></div>
+          <Btn bg="#e11d48" onClick={add} style={{height:42}}>Ekle</Btn>
+        </div>
+        <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Açıklama</div><input value={af.note} onChange={e=>setAf({...af,note:e.target.value})} placeholder="İsteğe bağlı açıklama..."/></div>
+      </div>}
+      <div style={{background:"#eff6ff",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.blu}}>
+        <strong>Bordro Yansıması:</strong> Avans→AVANS2 (-) | Ürün→ÜRÜN (-) | Maaş Haczi/İcra→KES-EKL (-) | <strong style={{color:C.grn}}>Devir+</strong>→DEVİR (+) | <strong style={{color:"#be185d"}}>Devir-</strong>→DEVİR (-)
+      </div>
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+        <table><thead><tr>{["TARİH","PERSONEL","TÜR","TUTAR","AÇIKLAMA","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{D.avanslar.filter(a=>filteredSortedEmps.some(e=>e.id===a.empId)).map(a=>{const tb=typeBadge(a.type);return <tr key={a.id}><td style={tdS}>{a.date}</td><td style={{...tdS,fontWeight:600}}>{empName(a.empId)}</td><td style={tdS}><Badge text={a.type} bg={tb.bg} color={tb.cl}/></td><td style={{...tdS,fontWeight:600}}>{fmt(a.amount)}</td><td style={{...tdS,color:C.mut}}>{a.note||"-"}</td><td style={tdS}>{can("sil")&&<button onClick={()=>setDb(p=>({...p,avanslar:p.avanslar.filter(x=>x.id!==a.id)}),addLog(a.type+" Silindi",empName(a.empId)+" → "+fmt(a.amount)+" ₺"))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}</td></tr>;})}</tbody></table>
+      </div>
+    </div>;
+  }
+
+  /* BORDRO INPUT - local state, save on blur, format on display */
+  function ManualInput({empId,field,dbVal,onSave,disabled,style:sx}){
+    const [txt,setTxt]=useState(String(dbVal||""));
+    const [editing,setEditing]=useState(false);
+    const focused=useRef(false);
+    useEffect(()=>{if(!focused.current)setTxt(String(dbVal||""));},[dbVal]);
+    const numVal=Number(String(txt).replace(/\./g,"").replace(",","."))||0;
+    const display=editing?txt:(numVal?fmt(numVal):"");
+    return <input type="text" inputMode="decimal" value={display} onChange={e=>setTxt(e.target.value)} onFocus={()=>{focused.current=true;setEditing(true);setTxt(numVal?String(numVal):"");}} onBlur={()=>{focused.current=false;setEditing(false);onSave(empId,field,txt);}} style={sx} placeholder="0" readOnly={disabled}/>;
+  }
+
+  /* BORDRO */
+  function BordroPage(){
+    const filtered=bordroData.filter(b=>{if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;return true;});
+    const cols=["ADI SOYADI","D","İZİN GÜNÜ","MAAŞI","GÜN","YOL","SAAT","MESAİ","FM","RT","MESAİ T.","MAAŞ T.","BANKA","BES","AVANS1","KES-EKL","YATAN","ELDEN","DEVİR","AVANS2","ÜRÜN","ÖDENEN","KALAN","İMZA"];
+    const tc={textAlign:"center",fontSize:11,padding:"8px 4px",whiteSpace:"nowrap"};
+    const tot=filtered.reduce((t,b)=>({maas:t.maas+b.maas,gun:t.gun+b.gun,yol:t.yol+b.yol,saat:t.saat+b.saat,mesai:t.mesai+b.mesai,fm:t.fm+b.fmVal,rt:t.rt+b.rtVal,mesaiT:t.mesaiT+b.mesaiT,maasT:t.maasT+b.maasT,banka:t.banka+b.banka,bes:t.bes+b.bes,a1:t.a1+b.avans1,ke:t.ke+b.ke,yt:t.yt+b.yatan,el:t.el+b.elden,dv:t.dv+b.devir,a2:t.a2+b.a2,ur:t.ur+b.ur,od:t.od+b.odenen,kl:t.kl+b.kalan}),{maas:0,gun:0,yol:0,saat:0,mesai:0,fm:0,rt:0,mesaiT:0,maasT:0,banka:0,bes:0,a1:0,ke:0,yt:0,el:0,dv:0,a2:0,ur:0,od:0,kl:0});
+    const fe=(v)=>v!==0?fmt(v):"";const fn=(v)=>v>0?"-"+fmt(v):"";
+    function setManual(empId,field,val){const emp=D.employees.find(e=>e.id===empId);if(emp&&isEmpKapali(emp))return;const mk=bKey(empId);setDb(p=>{const m={...p.bordroManual};if(!m[mk])m[mk]={banka:"",bes:"",odenen:""};m[mk]={...m[mk],[field]:val};return{...p,bordroManual:m};},val?addLog("Bordro Düzenlendi",(emp?emp.name:"#"+empId)+" → "+field+": "+val):null);}
+    function durumColor(emp){const d=emp.durum;if(d==="E")return"#ecfdf5";if(d===".")return"#fefce8";if(d==="K")return"#f3e8ff";return"transparent";}
+    function durumBadge(emp){const d=emp.durum;if(d==="E")return{bg:"#dcfce7",cl:"#16a34a"};if(d===".")return{bg:"#fef9c3",cl:"#a16207"};if(d==="K")return{bg:"#ede9fe",cl:"#7c3aed"};return{bg:"#f3f4f6",cl:C.sec};}
+    function handlePrint(){
+      const fL=bFirma||"Tüm Firmalar",sL=bSube||"Tüm Şubeler";
+      const w=window.open("","_blank");
+      const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;padding:6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #999;padding:3px 4px;text-align:center;font-size:10px}th{background:#e8e8e8;font-weight:700;font-size:9px}td:first-child,th:first-child{text-align:left;white-space:nowrap}.hdr{text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #333}.hdr h3,.hdr h1,.hdr h2,.hdr h4{font-size:15px;margin-bottom:3px}.hdr h1{font-weight:800}.hdr h3{color:#555;font-weight:700}.hdr h2{color:#333;font-weight:700}.hdr h4{color:#666;font-weight:600}.re{background:#ecfdf5}.rd{background:#fefce8}.rk{background:#f3e8ff}.tot{background:#f0fdf4;font-weight:bold}.neg{color:#c00}.pos{color:#060}.blu{color:#2563eb}@page{size:landscape;margin:5mm}";
+      const hd=cols;
+      let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fn(tot.a2)+"</td><td class='neg'>"+fn(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
+      filtered.forEach(b=>{
+        const m=D.bordroManual[bKey(b.emp.id)]||{};
+        const rc=b.emp.durum==="E"?"re":b.emp.durum==="."?"rd":b.emp.durum==="K"?"rk":"";
+        rows+="<tr"+(rc?" class='"+rc+"'":"")+">";
+        rows+="<td><b>"+b.emp.name+"</b></td>";
+        rows+="<td>"+b.emp.durum+"</td>";
+        rows+="<td>"+b.emp.izin+"</td>";
+        rows+="<td>"+fmt(b.maas)+"</td>";
+        rows+="<td class='blu'>"+b.gun+"</td>";
+        rows+="<td>"+fmt(b.yol)+"</td>";
+        rows+="<td>"+(b.saat||"-")+"</td>";
+        rows+="<td"+(b.mesai>0?" class='pos'":b.mesai<0?" class='neg'":"")+">"+b.mesai+"</td>";
+        rows+="<td>"+(b.fmVal||"-")+"</td>";
+        rows+="<td class='blu'>"+(b.rtVal||"-")+"</td>";
+        rows+="<td>"+(b.mesaiT!==0?fmt(b.mesaiT):"0,00")+"</td>";
+        rows+="<td><b>"+fmt(b.maasT)+"</b></td>";
+        rows+="<td>"+(Number(m.banka)?fmt(Number(m.banka)):"")+"</td>";
+        rows+="<td>"+(Number(m.bes)?fmt(Number(m.bes)):"")+"</td>";
+        rows+="<td>"+(b.avans1>0?fmt(b.avans1):"")+"</td>";
+        rows+="<td class='neg'>"+(b.ke>0?"-"+fmt(b.ke):"")+"</td>";
+        rows+="<td class='neg'>"+(b.yatan!==0?fmt(b.yatan):"")+"</td>";
+        rows+="<td class='pos'>"+fmt(b.elden)+"</td>";
+        rows+="<td>"+(b.devir!==0?fmt(b.devir):"")+"</td>";
+        rows+="<td class='neg'>"+(b.a2>0?"-"+fmt(b.a2):"")+"</td>";
+        rows+="<td class='neg'>"+(b.ur>0?"-"+fmt(b.ur):"")+"</td>";
+        rows+="<td>"+(Number(m.odenen)?fmt(Number(m.odenen)):"")+"</td>";
+        rows+="<td><b>"+fmt(b.kalan)+"</b></td>";
+        rows+="<td></td></tr>";
+      });
+      const thRow="<tr>"+hd.map(h=>"<th>"+h+"</th>").join("")+"</tr>";
+      w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Bordro</title><style>"+css+"</style></head><body>");
+      w.document.write("<div class='hdr'><h3>"+donemLabel+" DÖNEMİ</h3><h1>PERSONEL MAAŞ TABLOSU</h1><h2>"+fL+"</h2><h4>"+sL+"</h4></div>");
+      w.document.write("<table>"+thRow+rows+"</table>");
+      w.document.write("</body></html>");
+      w.document.close();
+      setTimeout(()=>w.print(),400);
+    }
+    function handleKapat(){
+      if(!bFirma||!bSube)return alert("Dönemi kapatmak için Firma ve Şube seçmelisiniz!");
+      if(!confirm(bFirma+" / "+bSube+" dönemini kapatmak ve kalanları bir sonraki aya devretmek istediğinize emin misiniz?"))return;
+      const kapKey=donemKey+"|"+bFirma+"|"+bSube;
+      const ndk=nextDonemKey();
+      const devir={...D.bordroDevir};
+      const snap={...D.bordroSnapshot};
+      filtered.forEach(b=>{
+        /* Kalan → bir sonraki ayın devir sütununa */
+        devir[ndk+"|"+b.emp.id]=b.kalan;
+        /* Snapshot bu dönem için */
+        snap[bKey(b.emp.id)]={maas:b.emp.maas,yol:b.emp.yol,sabitAvans:b.emp.sabitAvans};
+      });
+      setDb(p=>({...p,bordroKapali:{...p.bordroKapali,[kapKey]:true},bordroDevir:devir,bordroSnapshot:snap}),addLog("Dönem Kapatıldı",bFirma+" / "+bSube+" — "+donemLabel));
+      alert(bFirma+" / "+bSube+" — "+donemLabel+" dönemi kapatıldı. Kalanlar bir sonraki aya devredildi.");
+    }
+    function handleAc(){
+      if(!bFirma||!bSube)return alert("Dönemi açmak için Firma ve Şube seçmelisiniz!");
+      if(!confirm(bFirma+" / "+bSube+" dönemini tekrar açmak istediğinize emin misiniz?"))return;
+      const kapKey=donemKey+"|"+bFirma+"|"+bSube;
+      const kp={...D.bordroKapali};delete kp[kapKey];
+      const ndk=nextDonemKey();
+      const devir={...D.bordroDevir};
+      const snap={...D.bordroSnapshot};
+      filtered.forEach(b=>{delete devir[ndk+"|"+b.emp.id];delete snap[bKey(b.emp.id)];});
+      setDb(p=>({...p,bordroKapali:kp,bordroDevir:devir,bordroSnapshot:snap}),addLog("Dönem Açıldı",bFirma+" / "+bSube+" — "+donemLabel));
+    }
+    const viewKapali=bFirma&&bSube?isKapali(bFirma,bSube):false;
+    const kapaliList=Object.keys(D.bordroKapali).filter(k=>k.startsWith(donemKey+"|")).map(k=>{const p=k.split("|");return p[1]+" / "+p[2];});
+    const minI={width:65,padding:"4px 6px",fontSize:11,textAlign:"right",border:"1px solid #e5e7eb",borderRadius:4};
+
+    return <div>
+      <Header icon={<IcTable/>} title="Maaş Tahakkuk ve Bordro" sub="Net maaş ve kesinti hesaplamaları" right={<div style={{display:"flex",alignItems:"center",gap:12}}><button onClick={goPrev} style={{background:"none",border:"none",cursor:"pointer",color:C.mut}}><IcChevL/></button><span style={{fontSize:16,fontWeight:700,letterSpacing:"0.08em"}}>{donemLabel}</span><button onClick={goNext} style={{background:"none",border:"none",cursor:"pointer",color:C.mut}}><IcChevR/></button></div>}/>
+      {viewKapali&&<div style={{background:"#fef2f2",borderRadius:10,padding:"12px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",border:"1px solid #fecaca"}}>
+        <div style={{color:C.red,fontSize:13,fontWeight:600}}>⛔ {bFirma} / {bSube} dönemi kapatılmış</div>
+        {(curUser.role==="admin"||curUser.role==="yonetici")&&<Btn bg={C.red} onClick={handleAc} style={{fontSize:12,padding:"8px 16px"}}><IcX/> Dönemi Aç</Btn>}
+      </div>}
+      {kapaliList.length>0&&<div style={{background:"#f0f9ff",borderRadius:8,padding:"10px 16px",marginBottom:12,fontSize:12,color:C.blu}}>
+        <strong>Kapatılmış dönemler:</strong> {kapaliList.join(" | ")}
+      </div>}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <input placeholder="Ara..." style={{width:140}}/>
+        <select value={bFirma} onChange={e=>setBFirma(e.target.value)} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={bSube} onChange={e=>setBSube(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
+        <div style={{flex:1}}/>
+        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
+        <BtnO><IcDl/> Excel İndir</BtnO>
+        {bFirma&&bSube&&!viewKapali&&<Btn bg={C.pur} onClick={handleKapat}><IcCheck/> Dönemi Kapat & Devret</Btn>}
+      </div>
+      {/* PRINT + SCREEN TITLE */}
+      <div style={{background:C.card,borderRadius:12,padding:"20px 28px",marginBottom:16,border:"1px solid "+C.cardBrd,textAlign:"center"}}>
+        <div style={{fontSize:20,fontWeight:800,color:C.tealDk,marginBottom:2,letterSpacing:"0.04em"}}>{donemLabel} DÖNEMİ</div>
+        <div style={{fontSize:18,fontWeight:800,color:C.txt,marginBottom:6}}>PERSONEL MAAŞ TABLOSU</div>
+        <div style={{fontSize:14,color:C.sec,fontWeight:600}}>{bFirma||"Tüm Firmalar"}</div>
+        <div style={{fontSize:13,color:C.mut}}>{bSube||"Tüm Şubeler"}</div>
+      </div>
+      {/* RENK AÇIKLAMASI */}
+      <div className="no-print" style={{display:"flex",gap:16,marginBottom:12,fontSize:12,color:C.sec}}>
+        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:16,height:12,borderRadius:3,background:"#f3f4f6",border:"1px solid #e5e7eb"}}></span> S</span>
+        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:16,height:12,borderRadius:3,background:"#ecfdf5",border:"1px solid #bbf7d0"}}></span> E</span>
+        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:16,height:12,borderRadius:3,background:"#fefce8",border:"1px solid #fef9c3"}}></span> .</span>
+        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:16,height:12,borderRadius:3,background:"#f3e8ff",border:"1px solid #e9d5ff"}}></span> K</span>
+      </div>
+      {/* TABLE */}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}} className="bordro-print">
+        <table style={{minWidth:1800}}>
+          <thead><tr>{cols.map(h=><th key={h} style={{...thS,textAlign:h==="ADI SOYADI"?"left":"center",minWidth:h==="ADI SOYADI"?140:h==="İMZA"?60:h==="D"?30:h==="MESAİ T."||h==="MAAŞ T."?80:h==="BANKA"||h==="BES"||h==="ÖDENEN"?70:55,fontSize:10,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+          <tbody>
+            {/* GENEL TOPLAM */}
+            <tr style={{background:"#f0fdf4",fontWeight:700,borderBottom:"2px solid "+C.brd}}>
+              <td style={{padding:"8px 12px",fontSize:12,fontWeight:800}}>GENEL TOPLAM:</td>
+              <td style={tc}></td>
+              <td style={tc}></td>
+              <td style={tc}>{fmt(tot.maas)}</td>
+              <td style={{...tc,color:C.blu}}>{tot.gun}</td>
+              <td style={tc}>{fmt(tot.yol)}</td>
+              <td style={tc}>{fe(tot.saat)}</td>
+              <td style={tc}>{fe(tot.mesai)}</td>
+              <td style={tc}>{fe(tot.fm)}</td>
+              <td style={{...tc,color:C.blu}}>{fe(tot.rt)}</td>
+              <td style={tc}>{fe(tot.mesaiT)}</td>
+              <td style={{...tc,fontWeight:800}}>{fmt(tot.maasT)}</td>
+              <td style={{...tc,background:"#fef9c3"}}>{fe(tot.banka)}</td>
+              <td style={tc}>{fe(tot.bes)}</td>
+              <td style={{...tc,background:"#dcfce7"}}>{fe(tot.a1)}</td>
+              <td style={{...tc,color:C.red}}>{fn(tot.ke)}</td>
+              <td style={{...tc,color:C.red}}>{tot.yt!==0?fmt(tot.yt):""}</td>
+              <td style={{...tc,color:C.grn}}>{fmt(tot.el)}</td>
+              <td style={tc}>{fe(tot.dv)}</td>
+              <td style={{...tc,color:C.red}}>{fn(tot.a2)}</td>
+              <td style={{...tc,color:C.red}}>{fn(tot.ur)}</td>
+              <td style={tc}>{fe(tot.od)}</td>
+              <td style={{...tc,fontWeight:800,background:C.yelBg}}>{fmt(tot.kl)}</td>
+              <td style={tc}></td>
+            </tr>
+            {/* DATA ROWS */}
+            {filtered.map(b=>{
+              const rc=durumColor(b.emp);const db=durumBadge(b.emp);
+              const m=D.bordroManual[bKey(b.emp.id)]||{};
+              const rowCls=b.emp.durum==="E"?"row-e":b.emp.durum==="."?"row-dot":b.emp.durum==="K"?"row-k":"";
+              const locked=isEmpKapali(b.emp);
+              const mi={...minI,background:locked?"#f3f4f6":"#fefce8"};
+              return <tr key={b.emp.id} className={rowCls} style={{borderBottom:"1px solid "+C.brdLt,background:locked?"#f9fafb":rc}}>
+              <td style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.name}</td>
+              <td style={{...tc,padding:"4px 2px"}}><span style={{display:"inline-block",padding:"2px 6px",borderRadius:4,background:db.bg,color:db.cl,fontSize:10,fontWeight:700}}>{b.emp.durum}</span></td>
+              <td style={{...tc,color:C.sec}}>{b.emp.izin}</td>
+              <td style={tc}>{fmt(b.maas)}</td>
+              <td style={{...tc,color:C.blu}}>{b.gun}</td>
+              <td style={tc}>{fmt(b.yol)}</td>
+              <td style={tc}>{b.saat||"-"}</td>
+              <td style={{...tc,color:b.mesai>0?"#16a34a":b.mesai<0?C.red:C.sec}}>{b.mesai}</td>
+              <td style={tc}>{b.fmVal||"-"}</td>
+              <td style={{...tc,color:C.blu}}>{b.rtVal||"-"}</td>
+              <td style={tc}>{b.mesaiT!==0?fmt(b.mesaiT):"0,00"}</td>
+              <td style={{...tc,fontWeight:600}}>{fmt(b.maasT)}</td>
+              <td style={{...tc,padding:"2px"}}><ManualInput empId={b.emp.id} field="banka" dbVal={m.banka} onSave={setManual} disabled={locked} style={mi}/></td>
+              <td style={{...tc,padding:"2px"}}><ManualInput empId={b.emp.id} field="bes" dbVal={m.bes} onSave={setManual} disabled={locked} style={mi}/></td>
+              <td style={{...tc,background:"#dcfce7"}}>{b.avans1>0?fmt(b.avans1):""}</td>
+              <td style={{...tc,color:C.red}}>{b.ke>0?"-"+fmt(b.ke):""}</td>
+              <td style={{...tc,color:C.red}}>{b.yatan!==0?fmt(b.yatan):""}</td>
+              <td style={{...tc,color:C.grn}}>{fmt(b.elden)}</td>
+              <td style={tc}>{b.devir!==0?fmt(b.devir):""}</td>
+              <td style={{...tc,color:C.red}}>{b.a2>0?"-"+fmt(b.a2):""}</td>
+              <td style={{...tc,color:C.red}}>{b.ur>0?"-"+fmt(b.ur):""}</td>
+              <td style={{...tc,padding:"2px"}}><ManualInput empId={b.emp.id} field="odenen" dbVal={m.odenen} onSave={setManual} disabled={locked} style={mi}/></td>
+              <td style={{...tc,fontWeight:700,background:C.yelBg}}>{fmt(b.kalan)}</td>
+              <td style={{...tc,minWidth:60}}></td>
+            </tr>;})}
+          </tbody>
+        </table>
+      </div>
+      {/* FORMÜL */}
+      <div className="no-print" style={{background:"#f8fafc",borderRadius:8,padding:"12px 16px",marginTop:16,fontSize:11,color:C.sec,lineHeight:1.8}}>
+        <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir−Avans2−Ürün−Ödenen
+      </div>
+    </div>;
+  }
+
+  /* İZİN */
+  function IzinPage(){
+    const [lf,setLf]=useState({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});
+    const add=()=>{if(!lf.empId||!lf.start||!lf.end)return alert("Personel ve tarihler zorunlu!");const d1=new Date(lf.start),d2=new Date(lf.end);const days=Math.max(1,Math.round((d2-d1)/86400000)+1);setDb(p=>({...p,leaves:[...p.leaves,{id:p.nextLeaveId,...lf,empId:Number(lf.empId),days}],nextLeaveId:p.nextLeaveId+1}),addLog("İzin Eklendi",empName(Number(lf.empId))+" → "+lf.type+" ("+lf.start+" - "+lf.end+")"));setLf({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});};
+    return <div><Header icon={<IcDoc/>} title="İzin Formları" sub="Mazeret ve yıllık izin kayıtları"/>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
+          <div style={{flex:2}}><select value={lf.empId} onChange={e=>setLf({...lf,empId:e.target.value})}><option value="">Personel...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+          <div style={{flex:1}}><select value={lf.type} onChange={e=>setLf({...lf,type:e.target.value})}><option>Mİ</option><option>Yİ</option><option>H</option><option>R</option></select></div>
+          <Btn onClick={add} style={{height:42}}>Kaydet</Btn>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}><input type="date" value={lf.start} onChange={e=>setLf({...lf,start:e.target.value})}/><input type="date" value={lf.end} onChange={e=>setLf({...lf,end:e.target.value})}/><input placeholder="İzin Nedeni" value={lf.note} onChange={e=>setLf({...lf,note:e.target.value})}/></div>
+        <input placeholder="Onaylayan Yönetici" value={lf.approver} onChange={e=>setLf({...lf,approver:e.target.value})}/>
+      </div>}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+        <table><thead><tr>{["PERSONEL","TÜR","TARİH ARALIĞI","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{D.leaves.filter(l=>filteredSortedEmps.some(e=>e.id===l.empId)).map(l=><tr key={l.id}><td style={{...tdS,fontWeight:600}}>{empName(l.empId)}</td><td style={tdS}><Badge text={l.type} bg={C.grnBg} color={C.grn}/></td><td style={{...tdS,color:C.sec}}>{l.start} - {l.end} ({l.days} Gün)</td><td style={tdS}>{can("sil")&&<button onClick={()=>setDb(p=>({...p,leaves:p.leaves.filter(x=>x.id!==l.id)}),addLog("İzin Silindi",empName(l.empId)+" → "+l.type+" ("+l.start+" - "+l.end+")"))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}</td></tr>)}</tbody></table>
+      </div>
+    </div>;
+  }
+
+  /* TATİL */
+  function TatilPage(){
+    const [tf,setTf]=useState({n:"",s:"",e:""});
+    const add=()=>{if(!tf.n||!tf.s||!tf.e)return alert("Tüm alanlar zorunlu!");setDb(p=>({...p,holidays:[...p.holidays,{id:p.nextHolId,...tf}],nextHolId:p.nextHolId+1}),addLog("Tatil Eklendi",tf.n+" ("+tf.s+" - "+tf.e+")"));setTf({n:"",s:"",e:""});};
+    return <div><Header icon={<IcFlag/>} title="Resmi Tatiller" sub="Puantaja RT olarak otomatik yansıtılır"/>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"20px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}><div style={{display:"flex",gap:14,alignItems:"flex-end"}}><div style={{flex:2}}><input placeholder="Tatil Adı" value={tf.n} onChange={e=>setTf({...tf,n:e.target.value})}/></div><div style={{flex:1}}><input type="date" value={tf.s} onChange={e=>setTf({...tf,s:e.target.value})}/></div><div style={{flex:1}}><input type="date" value={tf.e} onChange={e=>setTf({...tf,e:e.target.value})}/></div><Btn onClick={add} style={{height:42}}>Ekle</Btn></div></div>}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+        <table><thead><tr>{["AD","TARİH ARALIĞI","SİL"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{D.holidays.map(h=><tr key={h.id}><td style={{...tdS,fontWeight:500}}>{h.n}</td><td style={{...tdS,color:C.sec}}>{h.s} - {h.e}</td><td style={tdS}>{can("sil")&&<button onClick={()=>setDb(p=>({...p,holidays:p.holidays.filter(x=>x.id!==h.id)}),addLog("Tatil Silindi",h.n))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}</td></tr>)}</tbody></table>
+      </div>
+    </div>;
+  }
+
+  /* PUANTAJ */
+  function PuantajPage(){
+    const donem=donemLabel;
+    const firmaLabel=ptF||"Tüm Firmalar";const subeLabel=ptS||"Tüm Şubeler";
+    function toggleDurum(d){setPtDs(prev=>prev.includes(d)?prev.filter(x=>x!==d):[...prev,d]);}
+    function handlePrint(){
+      const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9px;padding:6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #aaa;padding:1px 2px;text-align:center;font-size:9px;height:18px;line-height:18px}th{background:#e8e8e8;font-weight:700;font-size:8px}td:first-child,th:first-child{text-align:left;white-space:nowrap}.hdr{text-align:center;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #333}.hdr h3{font-size:15px;color:#555;margin-bottom:2px;font-weight:700}.hdr h1{font-size:15px;margin-bottom:3px;font-weight:800}.hdr h2{font-size:15px;color:#333;font-weight:700}.sm{background:#fefce8}@page{size:landscape;margin:5mm}";
+      const cMap={};CODES.forEach(c=>{cMap[c.c]={bg:c.bg,cl:c.cl};});
+      const w=window.open("","_blank");
+      w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Puantaj</title><style>"+css+"</style></head><body>");
+      w.document.write("<div class='hdr'><h3>"+donem+"</h3><h1>PUANTAJ TABLOSU</h1><h2>"+firmaLabel+" — "+subeLabel+"</h2></div>");
+      let th="<tr><th>PERSONEL</th><th>İZİN</th>";
+      for(let i=1;i<=pDays;i++){const rtD=isHolidayDay(i);th+="<th style='background:"+(rtD?"#dbeafe;color:#2563eb":"#e8e8e8")+"'>"+i+"</th>";}
+      th+="<th class='sm'>SA</th><th class='sm'>MS</th><th class='sm'>FM</th><th class='sm'>Yİ</th></tr>";
+      let rows="";
+      filtered.forEach(emp=>{
+        const sm=getPSummary(emp);
+        const rBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"";
+        rows+="<tr"+(rBg?" style='background:"+rBg+"'":"")+">";
+        rows+="<td><b>"+emp.name+"</b></td><td>"+emp.izin+"</td>";
+        for(let d=1;d<=pDays;d++){
+          const code=getCellCode(emp.id,d);
+          const iz=isIzinDay(emp,d);const rt=isHolidayDay(d);
+          const cs=cMap[code];
+          let bg,cl;
+          if(rt){bg="#dbeafe";cl=cs?cs.cl:"#2563eb";}
+          else if(iz){bg="#fee2e2";cl=cs?cs.cl:"#dc2626";}
+          else if(cs){bg=cs.bg;cl=cs.cl;}
+          else{bg="";cl="";}
+          let display=code;if(code==="S")display="S"+(D.puantajSaat[pKey(emp.id,d)]||"");
+          rows+="<td style='"+(bg?"background:"+bg+";":"")+(cl?"color:"+cl+";":"")+"font-weight:700'>"+display+"</td>";
+        }
+        rows+="<td class='sm' style='font-weight:600'>"+(sm.saat||"-")+"</td>";
+        rows+="<td class='sm' style='font-weight:700;color:"+(sm.mesai>0?"#16a34a":sm.mesai<0?"#ef4444":"#6b7280")+"'>"+sm.mesai+"</td>";
+        rows+="<td class='sm' style='font-weight:600'>"+(sm.fm||"-")+"</td>";
+        rows+="<td class='sm' style='font-weight:600;color:"+(sm.yi>0?"#dc2626":"#6b7280")+"'>"+(sm.yi||"-")+"</td></tr>";
+      });
+      w.document.write("<table>"+th+rows+"</table></body></html>");
+      w.document.close();setTimeout(()=>w.print(),400);
+    }
+    const dayN=["PZ","PT","SA","ÇA","PE","CU","CT"];const dayA=[];for(let i=1;i<=pDays;i++)dayA.push(dayN[new Date(pYear,pMonth,i).getDay()]);
+    const CODES=[{c:"X",l:"Geldi",bg:"#ffffff",cl:"#374151"},{c:"-",l:"Gelmedi",bg:"#d1d5db",cl:"#374151"},{c:"/",l:"Yarım",bg:"#e5e7eb",cl:"#6b7280"},{c:"M",l:"Mazeret",bg:"#ccfbf1",cl:"#0d9488"},{c:"Yİ",l:"Y.İzin",bg:"#fee2e2",cl:"#dc2626"},{c:"R",l:"Raporlu",bg:"#fef9c3",cl:"#a16207"},{c:"RT",l:"R.Tatil",bg:"#dbeafe",cl:"#2563eb"},{c:"FM",l:"F.Mesai",bg:"#f3e8ff",cl:"#7c3aed"},{c:"S",l:"Saat",bg:"#ccfbf1",cl:"#0d9488"},{c:"O",l:"Ölüm",bg:"#e5e7eb",cl:"#374151"},{c:"E",l:"Evlilik",bg:"#fbcfe8",cl:"#db2777"},{c:"H",l:"Hastalık",bg:"#fef3c7",cl:"#b45309"}];
+    function codeStyle(code){return CODES.find(x=>x.c===code)||null;}
+    const today=new Date();const todayDay=today.getFullYear()===pYear&&today.getMonth()===pMonth?today.getDate():99;
+    function canEditDay(day){if(curUser.role==="admin"||curUser.role==="yonetici")return true;return day>=todayDay;}
+    function handleCode(code){if(!selCell)return;const{empId,day}=selCell;if(!canEditDay(day)){alert("Geçmiş günlerde değişiklik yapamazsınız!");setSelCell(null);return;}const key=pKey(empId,day);const eName=empName(empId);
+      if(code==="S"){const val=prompt("Kaç saat:","1");if(val!==null&&!isNaN(val)&&val.trim()!==""){setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:"S"},puantajSaat:{...p.puantajSaat,[key]:Number(val)}}),addLog("Puantaj","Saat girişi: "+eName+" Gün "+day+" → S"+val));}}
+      else if(code==="-"||code==="/"){const sebep=prompt(code==="-"?"Gelmeme sebebi:":"Yarım gün sebebi:","");if(sebep===null)return;setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code},puantajNotes:{...p.puantajNotes,[key]:sebep}}),addLog("Puantaj",eName+" Gün "+day+" → "+code+(sebep?" ("+sebep+")":"")));}
+      else if(code==="CLEAR"){setDb(p=>{const nc={...p.puantajCells};delete nc[key];const ns={...p.puantajSaat};delete ns[key];const nn={...p.puantajNotes};delete nn[key];return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};},addLog("Puantaj",eName+" Gün "+day+" → Temizlendi"));}
+      else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
+      setSelCell(null);}
+    const filtered=filteredSortedEmps.filter(emp=>{if(ptSearch&&!emp.name.toLowerCase().includes(ptSearch.toLowerCase()))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
+    const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
+
+    function handleBulkApply(){
+      const{code,dayStart,dayEnd,sebep,saat}=bulkPt;
+      let ds=Number(dayStart),de=Number(dayEnd);
+      if(ds<1||de>pDays||ds>de)return alert("Geçersiz gün aralığı!");
+      if(filtered.length===0)return alert("Süzülmüş personel yok!");
+      if(curUser.role==="kullanici"){if(ds<todayDay)ds=todayDay;if(ds>de)return alert("Seçilen gün aralığı geçmişte kaldı. Geçmiş günlerde değişiklik yapamazsınız!");}
+      const gunSayisi=de-ds+1;
+      if(!confirm(filtered.length+" personel × "+gunSayisi+" gün = "+filtered.length*gunSayisi+" hücreye '"+code+"' uygulanacak. Onaylıyor musunuz?"))return;
+      setDb(p=>{
+        const nc={...p.puantajCells};const ns={...p.puantajSaat};const nn={...p.puantajNotes};
+        filtered.forEach(emp=>{
+          for(let d=ds;d<=de;d++){
+            const key=pKey(emp.id,d);
+            if(code==="CLEAR"){delete nc[key];delete ns[key];delete nn[key];}
+            else{
+              nc[key]=code;
+              if(code==="S")ns[key]=Number(saat)||1;
+              if(code==="-"||code==="/")nn[key]=sebep||"";
+            }
+          }
+        });
+        return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};
+      },addLog("Toplu Puantaj",filtered.length+" personel × "+gunSayisi+" gün → "+code));
+      alert("Toplu giriş tamamlandı!");
+    }
+
+    return <div>
+      {/* HEADER */}
+      <div style={{background:C.card,borderRadius:12,padding:"20px 28px",marginBottom:20,border:"1px solid "+C.cardBrd,textAlign:"center"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:8}}>
+          <button onClick={goPrev} style={{background:"none",border:"none",cursor:"pointer",color:C.mut}}><IcChevL/></button>
+          <span style={{fontSize:14,fontWeight:600,color:C.sec,letterSpacing:"0.1em"}}>{donem}</span>
+          <button onClick={goNext} style={{background:"none",border:"none",cursor:"pointer",color:C.mut}}><IcChevR/></button>
+        </div>
+        <div style={{fontSize:24,fontWeight:800,color:C.tealDk,marginBottom:6}}>PUANTAJ TABLOSU</div>
+        <div style={{fontSize:14,fontWeight:600,color:C.sec}}>{firmaLabel} — {subeLabel}</div>
+      </div>
+      {/* FİLTRELER */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/><input placeholder="Personel Ara..." value={ptSearch} onChange={e=>setPtSearch(e.target.value)} style={{width:160}}/>
+        <select value={ptF} onChange={e=>setPtF(e.target.value)} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={ptS} onChange={e=>setPtS(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
+        {/* DURUM ÇOK SEÇİMLİ */}
+        <div style={{position:"relative"}}>
+          <div onClick={()=>setPtDurDrop(!ptDurDrop)} style={{padding:"10px 14px",background:"#f6f7f9",border:"1.5px solid "+C.brd,borderRadius:8,fontSize:13,cursor:"pointer",minWidth:160,color:ptDs.length?C.txt:C.mut,userSelect:"none"}}>
+            {ptDs.length?ptDs.join(", "):"Tüm Durumlar"}
+          </div>
+          {ptDurDrop&&<div style={{position:"absolute",top:"100%",left:0,background:"#fff",border:"1.5px solid "+C.brd,borderRadius:8,padding:8,zIndex:50,minWidth:180,boxShadow:"0 8px 24px rgba(0,0,0,.12)",marginTop:4}}>
+            {D.durumlar.map(d=><label key={d} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 4px",fontSize:13,cursor:"pointer"}}>
+              <input type="checkbox" checked={ptDs.includes(d)} onChange={()=>toggleDurum(d)} style={{width:"auto"}}/>{d}
+            </label>)}
+            <div style={{display:"flex",gap:8,marginTop:6,borderTop:"1px solid "+C.brdLt,paddingTop:6}}>
+              {ptDs.length>0&&<span onClick={()=>setPtDs([])} style={{fontSize:12,color:C.red,cursor:"pointer"}}>Temizle</span>}
+              <span onClick={()=>setPtDurDrop(false)} style={{fontSize:12,color:C.teal,cursor:"pointer",marginLeft:"auto"}}>Kapat</span>
+            </div>
+          </div>}
+        </div>
+        <div style={{flex:1}}/>
+        {can("degistir","puantaj")&&<Btn bg={C.pur} onClick={()=>setBulkPt({...bulkPt,show:!bulkPt.show})} style={{fontSize:12,padding:"8px 16px"}}>{bulkPt.show?"▲ Toplu Giriş":"▼ Toplu Giriş"}</Btn>}
+        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn><span onClick={()=>{setPtSearch("");setPtF("");setPtS("");setPtDs([]);setPtDurDrop(false);}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Filtreyi Temizle</span>
+      </div>
+      {/* TOPLU GİRİŞ PANELİ */}
+      {bulkPt.show&&<div style={{background:C.card,borderRadius:12,padding:"18px 24px",marginBottom:12,border:"2px solid "+C.pur}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.pur,marginBottom:12}}>Toplu Puantaj Girişi</div>
+        <div style={{fontSize:12,color:C.sec,marginBottom:12}}>Süzülmüş <strong style={{color:C.txt}}>{filtered.length}</strong> personele toplu kod uygulanacak</div>
+        <div style={{display:"flex",gap:14,alignItems:"flex-end",flexWrap:"wrap",marginBottom:12}}>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Kod</div>
+            <select value={bulkPt.code} onChange={e=>setBulkPt({...bulkPt,code:e.target.value})} style={{width:130}}>
+              {CODES.map(({c,l})=><option key={c} value={c}>{c} - {l}</option>)}
+              <option value="CLEAR">⌫ Temizle</option>
+            </select>
+          </div>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Başlangıç Gün</div>
+            <input type="number" min="1" max={pDays} value={bulkPt.dayStart} onChange={e=>setBulkPt({...bulkPt,dayStart:e.target.value})} style={{width:70}}/>
+          </div>
+          <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Bitiş Gün</div>
+            <input type="number" min="1" max={pDays} value={bulkPt.dayEnd} onChange={e=>setBulkPt({...bulkPt,dayEnd:e.target.value})} style={{width:70}}/>
+          </div>
+          {(bulkPt.code==="-"||bulkPt.code==="/")&&<div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Sebep</div>
+            <input value={bulkPt.sebep} onChange={e=>setBulkPt({...bulkPt,sebep:e.target.value})} placeholder="Sebep girin..." style={{width:180}}/>
+          </div>}
+          {bulkPt.code==="S"&&<div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Saat</div>
+            <input type="number" min="1" value={bulkPt.saat} onChange={e=>setBulkPt({...bulkPt,saat:e.target.value})} style={{width:70}}/>
+          </div>}
+          <Btn bg={C.pur} onClick={handleBulkApply} style={{height:42}}><IcCheck/> Uygula ({filtered.length} kişi)</Btn>
+          <Btn bg="#6b7280" onClick={()=>setBulkPt({...bulkPt,show:false})} style={{height:42,fontSize:12}}><IcX/> Kapat</Btn>
+        </div>
+        <div style={{fontSize:11,color:C.mut}}>Not: Toplu giriş sadece süzülmüş (filtrelenmiş) personellere uygulanır. Önce firma/şube/durum filtresini ayarlayın.</div>
+      </div>}
+      {curUser.role==="kullanici"&&todayDay<=pDays&&<div style={{background:"#fef9c3",borderRadius:8,padding:"10px 16px",marginBottom:12,fontSize:12,color:"#92400e",display:"flex",alignItems:"center",gap:8}}>
+        🔒 Kullanıcı olarak sadece bugün ({todayDay} {months[pMonth]}) ve sonrası düzenlenebilir. Geçmiş günler kilitlidir.
+      </div>}
+      <div style={{display:"flex",gap:14,marginBottom:12,flexWrap:"wrap",fontSize:12,color:C.sec}}>{legend.map(([c,l,cl])=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:4}}><strong style={{color:cl}}>{c}</strong> {l}</span>)}</div>
+      {selCell&&<div onClick={()=>setSelCell(null)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.25)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}}><div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,padding:"20px 24px",boxShadow:"0 12px 40px rgba(0,0,0,.2)",minWidth:300}}><div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Kod Seç</div><div style={{fontSize:12,color:C.sec,marginBottom:6}}>{empName(selCell.empId)} — {selCell.day} {months[pMonth]}</div>{D.puantajNotes[pKey(selCell.empId,selCell.day)]&&<div style={{fontSize:11,color:C.orange,marginBottom:10,padding:"6px 10px",background:"#fff7ed",borderRadius:6,border:"1px solid #fed7aa"}}>📝 {D.puantajNotes[pKey(selCell.empId,selCell.day)]}</div>}<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>{CODES.map(({c,l,bg,cl})=><button key={c} onClick={()=>handleCode(c)} style={{padding:"8px 4px",borderRadius:8,border:"none",background:bg,color:cl,fontSize:12,fontWeight:700,cursor:"pointer",textAlign:"center"}}><div>{c}</div><div style={{fontSize:9,fontWeight:500,marginTop:2}}>{l}</div></button>)}<button onClick={()=>handleCode("CLEAR")} style={{padding:"8px 4px",borderRadius:8,border:"1px solid #e5e7eb",background:"#f9fafb",color:"#6b7280",fontSize:12,fontWeight:700,cursor:"pointer",textAlign:"center"}}><div>⌫</div><div style={{fontSize:9,fontWeight:500,marginTop:2}}>Temizle</div></button></div></div></div>}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:1400}}><thead><tr>
+          <th style={{...thS,position:"sticky",left:0,zIndex:3,minWidth:150,background:"#f8fafb"}}>PERSONEL</th><th style={{...thS,minWidth:80}}>FİRMA</th><th style={{...thS,textAlign:"center",minWidth:70}}>İZİN GÜNÜ</th>
+          {Array.from({length:pDays},(_,i)=>{const d=i+1;const rtDay=isHolidayDay(d);const locked=!canEditDay(d);return <th key={i} style={{...thS,textAlign:"center",minWidth:30,padding:"4px 1px",background:rtDay?"#dbeafe":locked?"#f1f1f1":"#f8fafb",color:rtDay?"#2563eb":locked?"#bbb":C.sec}}><div style={{fontSize:10}}>{d}</div><div style={{fontSize:8,fontWeight:400}}>{dayA[i]}</div></th>;})}
+          <th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:35}}>SAAT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:45}}>MESAİ</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:30}}>FM</th><th style={{...thS,textAlign:"center",background:"#dbeafe",minWidth:30}}>RT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:25}}>Yİ</th>
+        </tr></thead><tbody>
+          {filtered.map(emp=>{const sm=getPSummary(emp);
+            const rowBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"transparent";
+            const stickyBg=rowBg==="transparent"?"#fff":rowBg;
+            return <tr key={emp.id} style={{borderBottom:"1px solid "+C.brdLt,background:rowBg}}>
+              <td style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.name}</td>
+              <td style={{...tdS,color:C.sec,fontSize:12}}>{emp.firma}</td>
+              <td style={{...tdS,color:C.sec,fontSize:12,textAlign:"center"}}>{emp.izin}</td>
+              {Array.from({length:pDays},(_,di)=>{const day=di+1;const code=getCellCode(emp.id,day);const izin=isIzinDay(emp,day);const isRT=isHolidayDay(day);const cs=codeStyle(code);
+                let bg,bd,cl;
+                if(isRT){bg="#dbeafe";bd="1px solid #93c5fd";cl=cs?cs.cl:"#2563eb";}
+                else if(izin){bg="#fee2e2";bd="1px solid #fca5a5";cl=cs?cs.cl:"#dc2626";}
+                else if(cs){bg=cs.bg;bd="1px solid "+cs.cl+"40";cl=cs.cl;}
+                else{bg="transparent";bd="1px dashed #e5e7eb";cl=C.sec;}
+                let display=code;if(code==="S")display="S"+(D.puantajSaat[pKey(emp.id,day)]||"");
+                const note=D.puantajNotes[pKey(emp.id,day)]||"";
+                return <td key={di} style={{padding:"2px 1px",textAlign:"center"}}><div title={note?note:undefined} onClick={()=>{if(can("degistir","puantaj")&&canEditDay(day))setSelCell({empId:emp.id,day});}} style={{width:28,height:24,borderRadius:4,background:bg,border:bd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:code==="S"?8:9,fontWeight:700,color:cl,margin:"0 auto",cursor:can("degistir","puantaj")&&canEditDay(day)?"pointer":"default",opacity:canEditDay(day)?1:0.7,position:"relative"}}>{display}{note&&<span style={{position:"absolute",top:-2,right:-2,width:6,height:6,borderRadius:"50%",background:"#f97316"}}/>}</div></td>;
+              })}
+              <td style={{textAlign:"center",fontSize:12,fontWeight:600,background:C.yelBg,padding:"8px 4px"}}>{sm.saat||"-"}</td>
+              <td style={{textAlign:"center",fontSize:12,fontWeight:700,background:C.yelBg,padding:"8px 4px",color:sm.mesai>0?"#16a34a":sm.mesai<0?C.red:C.sec}}>{sm.mesai}</td>
+              <td style={{textAlign:"center",fontSize:12,fontWeight:600,background:C.yelBg,padding:"8px 4px"}}>{sm.fm||"-"}</td>
+              <td style={{textAlign:"center",fontSize:12,fontWeight:700,background:"#dbeafe",padding:"8px 4px",color:sm.rt>0?"#2563eb":C.sec}}>{sm.rt||"-"}</td>
+              <td style={{textAlign:"center",fontSize:12,fontWeight:600,background:C.yelBg,padding:"8px 4px",color:sm.yi>0?"#dc2626":C.sec}}>{sm.yi||"-"}</td>
+            </tr>;})}
+        </tbody></table>
+      </div>
+    </div>;
+  }
+
+  /* İŞLEM GEÇMİŞİ (LOG) */
+  function LogPage(){
+    const [logSearch,setLogSearch]=useState("");
+    const [logUser,setLogUser]=useState("");
+    const [logAction,setLogAction]=useState("");
+    const logs=D.logs||[];
+    const uniqueUsers=[...new Set(logs.map(l=>l.user))];
+    const uniqueActions=[...new Set(logs.map(l=>l.action))];
+    const filtered=logs.filter(l=>{
+      if(logSearch&&!l.detail.toLowerCase().includes(logSearch.toLowerCase())&&!l.action.toLowerCase().includes(logSearch.toLowerCase()))return false;
+      if(logUser&&l.user!==logUser)return false;
+      if(logAction&&l.action!==logAction)return false;
+      return true;
+    });
+    function fmtTs(ts){try{const d=new Date(ts);return d.toLocaleDateString("tr-TR")+" "+d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}catch(e){return ts;}}
+    function actionColor(a){if(a.includes("Silindi"))return{bg:C.redBg,cl:C.red};if(a.includes("Eklendi"))return{bg:C.grnBg,cl:C.grn};if(a.includes("Güncelle")||a.includes("Düzenle"))return{bg:"#eff6ff",cl:C.blu};if(a.includes("Puantaj"))return{bg:"#f3e8ff",cl:C.pur};if(a.includes("Dönem"))return{bg:C.yelBg,cl:"#a16207"};if(a.includes("Yedek"))return{bg:C.orgBg,cl:C.orange};return{bg:"#f3f4f6",cl:C.sec};}
+    function clearLogs(){if(confirm("Tüm işlem geçmişi silinecek. Emin misiniz?"))setDb(p=>({...p,logs:[]}),addLog("Log Temizlendi","Tüm geçmiş silindi"));}
+    function exportLogs(){
+      const header="Tarih;Kullanıcı;Rol;İşlem;Detay\n";
+      const rows=filtered.map(l=>fmtTs(l.ts)+";"+l.user+";"+l.role+";"+l.action+";"+l.detail).join("\n");
+      const bom="\uFEFF";const blob=new Blob([bom+header+rows],{type:"text/csv;charset=utf-8"});
+      const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="islem_gecmisi_"+new Date().toISOString().slice(0,10)+".csv";a.click();URL.revokeObjectURL(url);
+    }
+    return <div>
+      <Header icon={<IcLog/>} title="İşlem Geçmişi" sub={"Tüm değişiklikler kayıt altında — "+logs.length+" kayıt"} right={<div style={{display:"flex",gap:10}}><BtnO onClick={exportLogs}><IcDl/> CSV İndir</BtnO>{curUser.role==="admin"&&<Btn bg={C.red} onClick={clearLogs}><IcTrash/> Temizle</Btn>}</div>}/>
+      {/* BİLGİ */}
+      <div style={{background:"#ecfdf5",borderRadius:10,padding:"14px 20px",marginBottom:16,border:"1px solid #bbf7d0",display:"flex",alignItems:"flex-start",gap:12}}>
+        <span style={{fontSize:20,flexShrink:0}}>✅</span>
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:"#166534",marginBottom:4}}>Otomatik Kayıt — Tüm Tarayıcılar Senkron</div>
+          <div style={{fontSize:12,color:"#15803d",lineHeight:1.6}}>Tüm değişiklikler anında data.json dosyasına kaydedilir. Hangi tarayıcıdan açarsanız açın aynı güncel veriyi görürsünüz.</div>
+        </div>
+      </div>
+      {/* FİLTRELER */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/>
+        <input placeholder="Ara..." value={logSearch} onChange={e=>setLogSearch(e.target.value)} style={{width:200}}/>
+        <select value={logUser} onChange={e=>setLogUser(e.target.value)} style={{width:150}}><option value="">Tüm Kullanıcılar</option>{uniqueUsers.map(u=><option key={u} value={u}>{u}</option>)}</select>
+        <select value={logAction} onChange={e=>setLogAction(e.target.value)} style={{width:180}}><option value="">Tüm İşlemler</option>{uniqueActions.map(a=><option key={a} value={a}>{a}</option>)}</select>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:12,color:C.sec}}>{filtered.length} kayıt gösteriliyor</span>
+        <span onClick={()=>{setLogSearch("");setLogUser("");setLogAction("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+      </div>
+      {/* LOG TABLOSU */}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+        <table><thead><tr>
+          {["TARİH / SAAT","KULLANICI","ROL","İŞLEM","DETAY"].map(h=><th key={h} style={thS}>{h}</th>)}
+        </tr></thead>
+        <tbody>{filtered.length===0?<tr><td colSpan={5} style={{padding:32,textAlign:"center",color:C.mut}}>Henüz işlem kaydı yok. Herhangi bir değişiklik yaptığınızda burada görünecektir.</td></tr>:filtered.slice(0,200).map(l=>{
+          const ac=actionColor(l.action);
+          return <tr key={l.id} style={{borderBottom:"1px solid "+C.brdLt}}>
+            <td style={{...tdS,fontSize:12,color:C.sec,whiteSpace:"nowrap"}}>{fmtTs(l.ts)}</td>
+            <td style={{...tdS,fontWeight:600,fontSize:12}}>{l.user}</td>
+            <td style={tdS}><Badge text={l.role==="admin"?"ADMİN":l.role==="yonetici"?"YÖNETİCİ":"KULLANICI"} bg={l.role==="admin"?C.teal:l.role==="yonetici"?C.pur:C.blu} color="#fff"/></td>
+            <td style={tdS}><Badge text={l.action} bg={ac.bg} color={ac.cl}/></td>
+            <td style={{...tdS,fontSize:12,color:C.txt,maxWidth:400,overflow:"hidden",textOverflow:"ellipsis"}}>{l.detail}</td>
+          </tr>;
+        })}</tbody></table>
+        {filtered.length>200&&<div style={{padding:12,textAlign:"center",fontSize:12,color:C.mut}}>İlk 200 kayıt gösterilmektedir. CSV olarak indirerek tümünü görebilirsiniz.</div>}
+      </div>
+    </div>;
+  }
+
+  /* AYARLAR */
+  function AyarlarPage(){
+    const fO=listOps("firms"),sO=listOps("subs"),bO=listOps("bols"),gO=listOps("gorevler"),dO=listOps("durumlar"),iO=listOps("izinGunleri");
+    const [uf,setUf]=useState({name:"",pass:"",role:"kullanici"});
+    const [editUid,setEditUid]=useState(null);
+    const [editPerms,setEditPerms]=useState({});
+    const [editFirmalar,setEditFirmalar]=useState([]);
+    const [editSubeler,setEditSubeler]=useState([]);
+    const addUser=()=>{if(!uf.name||!uf.pass)return alert("Ad ve Şifre zorunlu!");setDb(p=>({...p,users:[...p.users,{id:p.nextUserId,name:uf.name,pass:uf.pass,role:uf.role,firmalar:[],subeler:[],perms:MODULES.reduce((a,m)=>({...a,[m.key]:{gor:true,ekle:false,degistir:false,sil:false}}),{})}],nextUserId:p.nextUserId+1}),addLog("Kullanıcı Eklendi",uf.name+" ("+uf.role+")"));setUf({name:"",pass:"",role:"kullanici"});};
+    const savePerms=(uid)=>{const u=D.users.find(x=>x.id===uid);setDb(p=>({...p,users:p.users.map(u=>u.id===uid?{...u,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:u)}),addLog("Yetki Güncellendi",u?u.name:"#"+uid));setEditUid(null);};
+
+    return <div><Header icon={<IcGear/>} title="Sistem Ayarları" sub="Tanımlar, kullanıcılar ve yedekleme"/>
+      {/* KULLANICILAR */}
+      <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Kullanıcı Yönetimi</div>
+        <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:20}}>
+          <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Kullanıcı Adı</div><input value={uf.name} onChange={e=>setUf({...uf,name:e.target.value})}/></div>
+          <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şifre</div><input type="password" value={uf.pass} onChange={e=>setUf({...uf,pass:e.target.value})}/></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><select value={uf.role} onChange={e=>setUf({...uf,role:e.target.value})}><option value="admin">Admin</option><option value="yonetici">Yönetici</option><option value="kullanici">Kullanıcı</option></select></div>
+          <Btn bg={C.blu} onClick={addUser} style={{height:42}}>Ekle</Btn>
+        </div>
+        <table><thead><tr>{["KULLANICI","ROL","YETKİLER","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{D.users.map(u=><tr key={u.id}>
+          <td style={tdS}>{u.name}</td>
+          <td style={tdS}><Badge text={u.role==="admin"?"ADMİN":u.role==="yonetici"?"YÖNETİCİ":"KULLANICI"} bg={u.role==="admin"?C.teal:u.role==="yonetici"?C.pur:C.blu} color="#fff"/></td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{u.role==="admin"?"Tüm Yetkiler":(Object.entries(u.perms||{}).filter(([k,v])=>Object.values(v).some(x=>x)).map(([k])=>MODULES.find(m=>m.key===k)?.label).filter(Boolean).join(", ")||"Yetki yok")+(u.firmalar&&u.firmalar.length?" | Firma: "+u.firmalar.join(", "):"")+(u.subeler&&u.subeler.length?" | Şube: "+u.subeler.join(", "):"")}</td>
+          <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
+            {u.role!=="admin"&&<button onClick={()=>{setEditUid(u.id);setEditPerms({...u.perms});setEditFirmalar(u.firmalar||[]);setEditSubeler(u.subeler||[]);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+            {u.role!=="admin"&&<button onClick={()=>{const uName=u.name;setDb(p=>({...p,users:p.users.filter(x=>x.id!==u.id)}),addLog("Kullanıcı Silindi",uName));}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
+          </span></td>
+        </tr>)}</tbody></table>
+      </div>
+      {/* YETKI MODAL */}
+      {editUid&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.blu,marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Yetki Düzenle: {D.users.find(u=>u.id===editUid)?.name}</div>
+        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Her modül için yetkileri belirleyin</div>
+        <table><thead><tr><th style={thS}>MODÜL</th>{PERMS.map(p=><th key={p} style={{...thS,textAlign:"center"}}>{PERM_LABELS[p]}</th>)}</tr></thead>
+        <tbody>{MODULES.filter(m=>m.key!=="ayarlar"||curUser.role==="admin").map(m=><tr key={m.key}>
+          <td style={tdS}>{m.label}</td>
+          {PERMS.map(p=><td key={p} style={{...tdS,textAlign:"center"}}><input type="checkbox" checked={editPerms[m.key]?.[p]||false} onChange={e=>{const np={...editPerms};if(!np[m.key])np[m.key]={gor:false,ekle:false,degistir:false,sil:false};np[m.key][p]=e.target.checked;setEditPerms(np);}} style={{width:"auto",cursor:"pointer"}}/></td>)}
+        </tr>)}</tbody></table>
+        <div style={{display:"flex",gap:10,marginTop:16}}><Btn bg={C.blu} onClick={()=>savePerms(editUid)}><IcSave/> Kaydet</Btn><Btn bg="#6b7280" onClick={()=>setEditUid(null)}><IcX/> İptal</Btn></div>
+        {/* FİRMA / ŞUBE SEÇİMİ */}
+        <div style={{marginTop:20,paddingTop:20,borderTop:"1px solid "+C.brd}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Erişim İzni: Firmalar ve Şubeler</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:8}}>Firmalar (boş = hepsine erişim)</div>
+              {D.firms.map(f=><label key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
+                <input type="checkbox" checked={editFirmalar.includes(f)} onChange={e=>{if(e.target.checked)setEditFirmalar([...editFirmalar,f]);else setEditFirmalar(editFirmalar.filter(x=>x!==f));}} style={{width:"auto"}}/>
+                {f}
+              </label>)}
+            </div>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:8}}>Şubeler (boş = hepsine erişim)</div>
+              {D.subs.map(s=><label key={s} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
+                <input type="checkbox" checked={editSubeler.includes(s)} onChange={e=>{if(e.target.checked)setEditSubeler([...editSubeler,s]);else setEditSubeler(editSubeler.filter(x=>x!==s));}} style={{width:"auto"}}/>
+                {s}
+              </label>)}
+            </div>
+          </div>
+        </div>
+      </div>}
+      {/* TANIMLAR */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:20}}>
+        <EditableList title="Firma" items={D.firms} {...fO}/>
+        <EditableList title="Şube" items={D.subs} {...sO}/>
+        <EditableList title="Bölüm" items={D.bols} {...bO}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:20}}>
+        <EditableList title="Görev" items={D.gorevler} {...gO}/>
+        <EditableList title="Durum" items={D.durumlar} {...dO}/>
+        <EditableList title="İzin Günü" items={D.izinGunleri} {...iO}/>
+      </div>
+      {/* OTOMATİK KAYIT BİLGİSİ */}
+      <div style={{background:"#ecfdf5",borderRadius:12,padding:"18px 24px",border:"1.5px solid #86efac",marginBottom:20,display:"flex",alignItems:"flex-start",gap:14}}>
+        <span style={{fontSize:28,flexShrink:0}}>✅</span>
+        <div>
+          <div style={{fontSize:15,fontWeight:700,color:"#166534",marginBottom:6}}>Otomatik Kayıt Aktif — Tüm Tarayıcılar Senkron</div>
+          <div style={{fontSize:13,color:"#15803d",lineHeight:1.7}}>Tüm değişiklikler anında <strong>data.json</strong> dosyasına otomatik kaydedilir. Chrome, Edge, Firefox — hangi tarayıcıyı kullanırsanız kullanın aynı veriyi görürsünüz.</div>
+        </div>
+      </div>
+      {/* YEDEKLEME */}
+      <div style={{background:C.card,borderRadius:12,padding:"20px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><div style={{fontSize:16,fontWeight:700}}>Yedekleme</div><div style={{fontSize:13,color:C.sec}}>Verilerinizi JSON olarak indirip başka bir tarayıcıya aktarabilirsiniz.</div></div>
+          <div style={{display:"flex",gap:10}}>
+            <Btn bg={C.tealDk} onClick={handleBackup}><IcDl/> Yedek İndir</Btn>
+            <BtnO onClick={()=>fileRef.current?.click()}><IcUl/> Yedek Yükle</BtnO>
+            <input ref={fileRef} type="file" accept=".json" onChange={handleRestore} style={{display:"none"}}/>
+          </div>
+        </div>
+      </div>
+    </div>;
+  }
+
+  /* RENDER */
+  const renderPage=()=>{
+    if(!can("gor"))return <div style={{background:C.card,borderRadius:12,padding:40,textAlign:"center"}}><div style={{fontSize:18,fontWeight:700,marginBottom:8}}>Erişim Engellendi</div><div style={{color:C.sec}}>Bu modüle erişim yetkiniz bulunmamaktadır.</div></div>;
+    switch(page){case "dashboard":return <DashboardPage/>;case "puantaj":return <PuantajPage/>;case "personel":return <PersonelPage/>;case "avans":return <AvansPage/>;case "bordro":return <BordroPage/>;case "izin":return <IzinPage/>;case "tatil":return <TatilPage/>;case "log":return <LogPage/>;case "ayarlar":return <AyarlarPage/>;default:return <DashboardPage/>;}
+  };
+
+  return <div style={{display:"flex",height:"100vh",overflow:"hidden",background:C.bg}}>
+    <aside style={{width:sideOpen?240:0,background:C.sidebar,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden",transition:"width .25s ease",whiteSpace:"nowrap"}}>
+      <div style={{padding:"20px 20px 12px",minWidth:240}}>
+        <div style={{fontFamily:"Georgia,serif",fontSize:22,fontStyle:"italic",color:"rgba(255,255,255,.7)",marginBottom:8}}>erdemCe</div>
+        <span style={{display:"inline-block",padding:"4px 12px",borderRadius:6,background:C.teal,color:"#fff",fontSize:10,fontWeight:700,letterSpacing:".06em"}}>{"KULLANICI: "+curUser.name.toUpperCase()}</span>
+        <div style={{fontSize:10,color:"rgba(255,255,255,.4)",marginTop:4}}>{curUser.role==="admin"?"Admin":curUser.role==="yonetici"?"Yönetici":"Kullanıcı"}</div>
+      </div>
+      <nav style={{flex:1,padding:"8px 12px",display:"flex",flexDirection:"column",gap:2,minWidth:240}}>
+        {MENU.map(item=>{const active=page===item.key;const Ic=icMap[item.ic];const visible=curUser.role==="admin"||(curUser.perms&&curUser.perms[item.key]&&curUser.perms[item.key].gor);
+          if(!visible)return null;
+          return <button key={item.key} onClick={()=>{setPage(item.key);}} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 16px",borderRadius:10,border:"none",cursor:"pointer",background:active?C.orange:"transparent",color:active?"#fff":C.sidebarText,fontSize:14,fontWeight:active?600:500,textAlign:"left",width:"100%"}}><Ic/><span>{item.label}</span></button>;
+        })}
+      </nav>
+      <div style={{padding:"12px",minWidth:240}}>
+        <button onClick={()=>setCurUser(null)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"12px",borderRadius:10,border:"none",background:C.teal,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"}}><IcLogout/> Çıkış Yap</button>
+      </div>
+    </aside>
+    <main style={{flex:1,overflow:"auto",padding:24,position:"relative"}} key={page}>
+      <button onClick={()=>setSideOpen(!sideOpen)} style={{position:"fixed",top:12,left:sideOpen?248:8,zIndex:50,width:36,height:36,borderRadius:8,border:"none",background:sideOpen?"rgba(255,255,255,.9)":C.sidebar,color:sideOpen?C.sidebar:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.15)",transition:"left .25s ease",fontSize:18,fontWeight:700}}>
+        {sideOpen?"◀":"☰"}
+      </button>
+      {renderPage()}
+    </main>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
