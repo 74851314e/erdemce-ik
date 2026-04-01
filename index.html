@@ -198,6 +198,7 @@ function App(){
   const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");
   const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
   const fileRef=useRef();
+  const ptSearchRef=useRef();
 
   /* Sunucudan veri yükle — uygulama açıldığında bir kez çalışır */
   useEffect(()=>{
@@ -281,7 +282,7 @@ function App(){
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
-  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=30+Math.min(0,mesai)-ayr;return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr};}
+  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=Math.max(0,30+Math.min(0,mesai)-ayr);return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr};}
 
   /* BORDRO */
   function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
@@ -296,7 +297,8 @@ function App(){
     const avans1=kapali&&snap?Number(snap.sabitAvans)||0:Number(emp.sabitAvans)||0;
     const gunlukUcret=maas/30;const saatUcreti=gunlukUcret/7.5;
     const mesaiT=(ps.saat*saatUcreti)+(ps.mesai*gunlukUcret)+(ps.fm*gunlukUcret)+(ps.rt*gunlukUcret);
-    const maasT=maas+yol+mesaiT;
+    const gunOrani=Math.min(ps.gun,30)/30;
+    const maasT=(maas*gunOrani)+(yol*gunOrani)+mesaiT;
     const m=D.bordroManual[bKey(emp.id)]||{};
     const banka=Number(m.banka)||0;const bes=Number(m.bes)||0;const odenen=Number(m.odenen)||0;
     /* Avansları dönem tarihine göre filtrele */
@@ -871,7 +873,7 @@ function App(){
       </div>
       {/* FİLTRELER */}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
-        <IcFilter/><input placeholder="Personel Ara..." value={ptSearch} onChange={e=>setPtSearch(e.target.value)} style={{width:160}}/>
+        <IcFilter/><input ref={ptSearchRef} placeholder="Personel Ara..." defaultValue={ptSearch} onKeyDown={e=>{if(e.key==="Enter")setPtSearch(e.target.value);}} onBlur={e=>setPtSearch(e.target.value)} style={{width:160}}/>
         <select value={ptF} onChange={e=>setPtF(e.target.value)} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
         <select value={ptS} onChange={e=>setPtS(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
         {/* DURUM ÇOK SEÇİMLİ */}
@@ -891,7 +893,7 @@ function App(){
         </div>
         <div style={{flex:1}}/>
         {can("degistir","puantaj")&&<Btn bg={C.pur} onClick={()=>setBulkPt({...bulkPt,show:!bulkPt.show})} style={{fontSize:12,padding:"8px 16px"}}>{bulkPt.show?"▲ Toplu Giriş":"▼ Toplu Giriş"}</Btn>}
-        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn><span onClick={()=>{setPtSearch("");setPtF("");setPtS("");setPtDs([]);setPtDurDrop(false);}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Filtreyi Temizle</span>
+        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn><span onClick={()=>{setPtSearch("");setPtF("");setPtS("");setPtDs([]);setPtDurDrop(false);if(ptSearchRef.current)ptSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Filtreyi Temizle</span>
       </div>
       {/* TOPLU GİRİŞ PANELİ */}
       {bulkPt.show&&<div style={{background:C.card,borderRadius:12,padding:"18px 24px",marginBottom:12,border:"2px solid "+C.pur}}>
