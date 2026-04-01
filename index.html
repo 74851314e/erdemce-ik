@@ -281,7 +281,7 @@ function App(){
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
-  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=30+Math.min(0,mesai);return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun};}
+  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){mesai--;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=30+Math.min(0,mesai);return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun};}
 
   /* BORDRO */
   function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
@@ -819,7 +819,7 @@ function App(){
       w.document.close();setTimeout(()=>w.print(),400);
     }
     const dayN=["PZ","PT","SA","ÇA","PE","CU","CT"];const dayA=[];for(let i=1;i<=pDays;i++)dayA.push(dayN[new Date(pYear,pMonth,i).getDay()]);
-    const CODES=[{c:"X",l:"Geldi",bg:"#ffffff",cl:"#374151"},{c:"-",l:"Gelmedi",bg:"#d1d5db",cl:"#374151"},{c:"/",l:"Yarım",bg:"#e5e7eb",cl:"#6b7280"},{c:"M",l:"Mazeret",bg:"#ccfbf1",cl:"#0d9488"},{c:"Yİ",l:"Y.İzin",bg:"#fee2e2",cl:"#dc2626"},{c:"R",l:"Raporlu",bg:"#fef9c3",cl:"#a16207"},{c:"RT",l:"R.Tatil",bg:"#dbeafe",cl:"#2563eb"},{c:"FM",l:"F.Mesai",bg:"#f3e8ff",cl:"#7c3aed"},{c:"S",l:"Saat",bg:"#ccfbf1",cl:"#0d9488"},{c:"O",l:"Ölüm",bg:"#e5e7eb",cl:"#374151"},{c:"E",l:"Evlilik",bg:"#fbcfe8",cl:"#db2777"},{c:"H",l:"Hastalık",bg:"#fef3c7",cl:"#b45309"}];
+    const CODES=[{c:"X",l:"Geldi",bg:"#ffffff",cl:"#374151"},{c:"-",l:"Gelmedi",bg:"#d1d5db",cl:"#374151"},{c:"/",l:"Yarım",bg:"#e5e7eb",cl:"#6b7280"},{c:".",l:"Ayrıldı",bg:"#fecaca",cl:"#991b1b"},{c:"M",l:"Mazeret",bg:"#ccfbf1",cl:"#0d9488"},{c:"Yİ",l:"Y.İzin",bg:"#fee2e2",cl:"#dc2626"},{c:"R",l:"Raporlu",bg:"#fef9c3",cl:"#a16207"},{c:"RT",l:"R.Tatil",bg:"#dbeafe",cl:"#2563eb"},{c:"FM",l:"F.Mesai",bg:"#f3e8ff",cl:"#7c3aed"},{c:"S",l:"Saat",bg:"#ccfbf1",cl:"#0d9488"},{c:"O",l:"Ölüm",bg:"#e5e7eb",cl:"#374151"},{c:"E",l:"Evlilik",bg:"#fbcfe8",cl:"#db2777"},{c:"H",l:"Hastalık",bg:"#fef3c7",cl:"#b45309"}];
     function codeStyle(code){return CODES.find(x=>x.c===code)||null;}
     const today=new Date();const todayDay=today.getFullYear()===pYear&&today.getMonth()===pMonth?today.getDate():99;
     function canEditDay(day){if(curUser.role==="admin"||curUser.role==="yonetici")return true;return day>=todayDay;}
@@ -830,7 +830,7 @@ function App(){
       else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
       setSelCell(null);}
     const filtered=filteredSortedEmps.filter(emp=>{if(ptSearch&&!emp.name.toLowerCase().includes(ptSearch.toLowerCase()))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
-    const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
+    const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],[".","Ayrıldı","#991b1b"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
 
     function handleBulkApply(){
       const{code,dayStart,dayEnd,sebep,saat}=bulkPt;
