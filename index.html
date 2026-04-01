@@ -211,8 +211,6 @@ function App(){
   const addLog=(action,detail)=>({action,detail});
   const D=db;
 
-  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse at 30% 50%,#1a3c3c 0%,#162c30 40%,#0f1e22 100%)"}}><div style={{textAlign:"center",color:"#fff"}}><div style={{fontFamily:"Georgia,serif",fontSize:36,fontStyle:"italic",marginBottom:16,opacity:.7}}>erdemCe</div><div style={{fontSize:14,opacity:.5}}>Veriler yükleniyor...</div></div></div>;
-
   /* Kullanıcı DB'den güncellendiğinde curUser'ı senkronize et */
   useEffect(()=>{
     if(curUser){
@@ -326,6 +324,8 @@ function App(){
     }else{const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fname;a.click();URL.revokeObjectURL(url);}
   }
   function handleRestore(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(ev)=>{try{const data=JSON.parse(ev.target.result);setDb(prev=>({...defaultDB,...data}),addLog("Yedek Yüklendi",file.name));alert("Yedek başarıyla yüklendi!");}catch(err){alert("Geçersiz dosya!");}};reader.readAsText(file);}
+
+  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse at 30% 50%,#1a3c3c 0%,#162c30 40%,#0f1e22 100%)"}}><div style={{textAlign:"center",color:"#fff"}}><div style={{fontFamily:"Georgia,serif",fontSize:36,fontStyle:"italic",marginBottom:16,opacity:.7}}>erdemCe</div><div style={{fontSize:14,opacity:.5}}>Veriler yükleniyor...</div></div></div>;
 
   if(!curUser)return <Login users={D.users} onLogin={setCurUser}/>;
 
