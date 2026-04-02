@@ -409,8 +409,56 @@ function App(){
         </tbody></table>
       </div>;
     }
+    /* Yıllık İzinler — bu dönemde kullanılan */
+    const dStart=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
+    const dEnd=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(pDays).padStart(2,"0");
+    const ayIzinler=D.leaves.filter(l=>l.type==="Yİ"&&l.end>=dStart&&l.start<=dEnd&&dEmps.some(e=>e.id===l.empId));
+    /* Doğum günleri — bu ay doğanlar */
+    const ayDogum=dEmps.filter(e=>{if(!e.dogumGunu)return false;const p=e.dogumGunu.split("-");return p.length>=2&&Number(p[1])===(pMonth+1);}).sort((a,b)=>{const da=Number(a.dogumGunu.split("-")[2]||0);const db=Number(b.dogumGunu.split("-")[2]||0);return da-db;});
+    function handleDashPrint(){
+      const firmaL=dFirma||"TÜM FİRMALAR";const subeL=dSube?" / "+(dSube):"";const bolumL=dBolum?" / "+(dBolum):"";
+      const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;padding:8mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{border:1px solid #aaa;padding:4px 6px;font-size:10px}th{background:#e8e8e8;font-weight:700;font-size:9px;text-align:center}td{text-align:center}td:first-child{text-align:left;font-weight:600}.hdr{text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #333}.hdr h2{font-size:16px;margin-bottom:2px;font-weight:800;color:#333}.hdr h3{font-size:14px;font-weight:700;color:#555;margin-bottom:2px}.hdr h4{font-size:12px;color:#666}.tot{background:#f0fdf4;font-weight:700}.sec{font-size:12px;font-weight:800;background:#f8fafb;padding:8px 6px;border:1px solid #aaa;margin-bottom:0}.pos{color:#16a34a}.neg{color:#ef4444}.cards{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.card{flex:1;min-width:80px;border:1px solid #ccc;border-radius:6px;padding:6px 8px;text-align:center}.card .lbl{font-size:8px;color:#666;margin-bottom:2px}.card .val{font-size:13px;font-weight:800}.bday{color:#db2777}.izn{color:#dc2626}@page{size:A4 portrait;margin:8mm}";
+      const w=window.open("","_blank");
+      w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Özet Döküm</title><style>"+css+"</style></head><body>");
+      w.document.write("<div class='hdr'><h2>"+donemLabel+"</h2><h3>"+firmaL+subeL+bolumL+"</h3><h4>ÖZET DÖKÜM</h4></div>");
+      w.document.write("<div class='cards'>");
+      [["Personel",tot.kisi],["Maaş T.",fmt(tot.maasT)],["Elden",fmt(tot.elden)],["Kalan",fmt(tot.kalan)],["Maaş",fmt(tot.maas)],["Yol",fmt(tot.yol)],["Mesai T.",fmt(tot.mesaiT)],["Avans1",fmt(tot.avans1)]].forEach(([l,v])=>{
+        w.document.write("<div class='card'><div class='lbl'>"+l+"</div><div class='val'>"+v+"</div></div>");
+      });
+      w.document.write("</div>");
+      function writeOzet(title,data){
+        const entries=Object.entries(data).sort((a,b)=>b[1].maasT-a[1].maasT);
+        if(entries.length===0)return;
+        const t=entries.reduce((s,e)=>({kisi:s.kisi+e[1].kisi,maasT:s.maasT+e[1].maasT,elden:s.elden+e[1].elden,a2:s.a2+e[1].a2,kalan:s.kalan+e[1].kalan}),{kisi:0,maasT:0,elden:0,a2:0,kalan:0});
+        w.document.write("<div class='sec'>"+title+"</div>");
+        w.document.write("<table><tr><th style='text-align:left'>"+title.split(" ")[0]+"</th><th>Kişi</th><th>Maaş T.</th><th>Elden</th><th>Avans</th><th>Kalan</th></tr>");
+        entries.forEach(([k,v])=>{
+          w.document.write("<tr><td>"+k+"</td><td>"+v.kisi+"</td><td>"+fmt(v.maasT)+"</td><td class='pos'>"+fmt(v.elden)+"</td><td class='neg'>"+(v.a2>0?fmt(v.a2):"-")+"</td><td style='font-weight:700'>"+fmt(v.kalan)+"</td></tr>");
+        });
+        w.document.write("<tr class='tot'><td>TOPLAM</td><td>"+t.kisi+"</td><td>"+fmt(t.maasT)+"</td><td class='pos'>"+fmt(t.elden)+"</td><td class='neg'>"+(t.a2>0?fmt(t.a2):"-")+"</td><td>"+fmt(t.kalan)+"</td></tr></table>");
+      }
+      writeOzet("Firma Bazlı",firmaOzet);
+      writeOzet("Şube Bazlı",subeOzet);
+      writeOzet("Bölüm Bazlı",bolumOzet);
+      /* Yıllık İzinler */
+      if(ayIzinler.length>0){
+        w.document.write("<div class='sec'>Yıllık İzinler ("+ayIzinler.length+")</div>");
+        w.document.write("<table><tr><th style='text-align:left'>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Açıklama</th></tr>");
+        ayIzinler.forEach(l=>{w.document.write("<tr><td class='izn'>"+empName(l.empId)+"</td><td>"+l.start+"</td><td>"+l.end+"</td><td>"+l.days+"</td><td style='font-weight:400'>"+(l.note||"-")+"</td></tr>");});
+        w.document.write("</table>");
+      }
+      /* Doğum Günleri */
+      if(ayDogum.length>0){
+        w.document.write("<div class='sec'>Doğum Günleri ("+ayDogum.length+")</div>");
+        w.document.write("<table><tr><th style='text-align:left'>Personel</th><th>Doğum Tarihi</th><th>Firma</th><th>Şube</th></tr>");
+        ayDogum.forEach(e=>{const gun=e.dogumGunu.split("-")[2]||"";w.document.write("<tr><td class='bday'>"+e.name+"</td><td>"+gun+" "+months[pMonth]+"</td><td style='font-weight:400'>"+e.firma+"</td><td style='font-weight:400'>"+e.sube+"</td></tr>");});
+        w.document.write("</table>");
+      }
+      w.document.write("</body></html>");
+      w.document.close();setTimeout(()=>w.print(),400);
+    }
     return <div>
-      <Header icon={<IcGrid/>} title="Yönetim Paneli" sub={donemLabel+" dönemi özet rapor"}/>
+      <Header icon={<IcGrid/>} title="Yönetim Paneli" sub={donemLabel+" dönemi özet rapor"} right={<Btn onClick={handleDashPrint}><IcPrint/> Döküm Al</Btn>}/>
       {/* SÜZME */}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
         <IcFilter/>
@@ -441,27 +489,44 @@ function App(){
       <div style={{marginBottom:20}}>
         <OzetTablo title="Bölüm Bazlı Özet" data={bolumOzet} icon={<IcFlag/>}/>
       </div>
-      {/* PERSONEL DETAY TABLOSU */}
-      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden",marginBottom:20}}>
-        <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.brd}}>
-          <span style={{fontSize:14,fontWeight:700}}>Personel Detay</span>
-          <span style={{fontSize:12,color:C.mut,marginLeft:8}}>({dBordro.length} kişi)</span>
+      {/* YILLIK İZİNLER VE DOĞUM GÜNLERİ */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+        {/* Yıllık İzinler */}
+        <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+          <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.brd,display:"flex",alignItems:"center",gap:8}}>
+            <IcDoc/>
+            <span style={{fontSize:14,fontWeight:700}}>Yıllık İzinler</span>
+            <span style={{fontSize:12,color:C.mut}}>({ayIzinler.length})</span>
+          </div>
+          {ayIzinler.length>0?<table><thead><tr>
+            <th style={thS}>Personel</th><th style={{...thS,textAlign:"center"}}>Başlangıç</th><th style={{...thS,textAlign:"center"}}>Bitiş</th><th style={{...thS,textAlign:"center"}}>Gün</th>
+          </tr></thead><tbody>
+            {ayIzinler.map(l=><tr key={l.id}>
+              <td style={{...tdS,fontWeight:600,color:"#dc2626"}}>{empName(l.empId)}</td>
+              <td style={{...tdS,textAlign:"center",fontSize:12}}>{l.start}</td>
+              <td style={{...tdS,textAlign:"center",fontSize:12}}>{l.end}</td>
+              <td style={{...tdS,textAlign:"center",fontWeight:700}}>{l.days}</td>
+            </tr>)}
+          </tbody></table>:<div style={{padding:24,textAlign:"center",color:C.mut,fontSize:13}}>Bu dönemde yıllık izin kaydı yok</div>}
         </div>
-        <div style={{overflow:"auto"}}><table><thead><tr>
-          {["Ad Soyad","Firma","Şube","Bölüm","Gün","Maaş T.","Elden","Avans","Kalan"].map(h=><th key={h} style={{...thS,textAlign:h==="Ad Soyad"?"left":"center"}}>{h}</th>)}
-        </tr></thead><tbody>
-          {dBordro.map(b=><tr key={b.emp.id}>
-            <td style={{...tdS,fontWeight:600}}>{b.emp.name}</td>
-            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.firma}</td>
-            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.sube}</td>
-            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.bolum}</td>
-            <td style={ozTd}>{b.gun}</td>
-            <td style={ozTd}>{fmt(b.maasT)}</td>
-            <td style={{...ozTd,color:C.grn}}>{fmt(b.elden)}</td>
-            <td style={{...ozTd,color:C.red}}>{b.a2>0?fmt(b.a2):"-"}</td>
-            <td style={{...ozTd,fontWeight:700,color:b.kalan>=0?C.teal:C.red}}>{fmt(b.kalan)}</td>
-          </tr>)}
-        </tbody></table></div>
+        {/* Doğum Günleri */}
+        <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+          <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.brd,display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:18}}>🎂</span>
+            <span style={{fontSize:14,fontWeight:700}}>Doğum Günleri</span>
+            <span style={{fontSize:12,color:C.mut}}>({ayDogum.length})</span>
+          </div>
+          {ayDogum.length>0?<table><thead><tr>
+            <th style={thS}>Personel</th><th style={{...thS,textAlign:"center"}}>Gün</th><th style={{...thS,textAlign:"center"}}>Firma</th><th style={{...thS,textAlign:"center"}}>Şube</th>
+          </tr></thead><tbody>
+            {ayDogum.map(e=>{const gun=e.dogumGunu.split("-")[2]||"";return <tr key={e.id}>
+              <td style={{...tdS,fontWeight:600,color:"#db2777"}}>{e.name}</td>
+              <td style={{...tdS,textAlign:"center",fontWeight:700}}>{gun} {months[pMonth]}</td>
+              <td style={{...tdS,textAlign:"center",fontSize:12,color:C.sec}}>{e.firma}</td>
+              <td style={{...tdS,textAlign:"center",fontSize:12,color:C.sec}}>{e.sube}</td>
+            </tr>;})}
+          </tbody></table>:<div style={{padding:24,textAlign:"center",color:C.mut,fontSize:13}}>Bu ay doğum günü olan personel yok</div>}
+        </div>
       </div>
       {/* HIZLI İŞLEMLER */}
       <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd}}><div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Hızlı İşlemler</div><div style={{display:"flex",gap:12}}>{[["Puantaja Git","puantaj"],["Yeni Personel Ekle","personel"],["Maaşları Hesapla","bordro"]].map(([l,k])=><button key={k} onClick={()=>setPage(k)} style={{padding:"10px 24px",borderRadius:8,border:"1.5px solid "+C.teal,background:C.tealLt,color:C.teal,fontSize:13,fontWeight:600,cursor:"pointer"}}>{l}</button>)}</div></div>
