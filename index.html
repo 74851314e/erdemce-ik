@@ -342,11 +342,128 @@ function App(){
 
   /* DASHBOARD */
   function DashboardPage(){
-    const totalMaas=bordroData.reduce((s,b)=>s+b.maasT,0);
-    const totalAvans=D.avanslar.filter(a=>a.type==="Avans"&&filteredActiveEmps.some(e=>e.id===a.empId)).reduce((s,a)=>s+a.amount,0);
-    const stats=[{Ic:IcUsers,l:"Aktif Personel",v:String(filteredActiveEmps.length)},{Ic:IcTable,l:"Tahmini Maaş Yükü",v:fmt(totalMaas)+" ₺"},{Ic:IcCard,l:"Avans Çıkışları",v:fmt(totalAvans)+" ₺"},{Ic:IcDoc,l:"Onaylı İzinler",v:String(D.leaves.filter(l=>filteredActiveEmps.some(e=>e.id===l.empId)).length)}];
-    return <div><Header icon={<IcGrid/>} title="Yönetim Paneli" sub="Sistem özeti ve genel durum"/>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>{stats.map((st,i)=><div key={i} style={{background:C.card,borderRadius:12,padding:"20px 24px",border:"1px solid "+C.cardBrd}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,color:C.teal,fontSize:13,fontWeight:500}}><st.Ic/> {st.l}</div><div style={{fontSize:28,fontWeight:800}}>{st.v}</div></div>)}</div>
+    const [dFirma,setDFirma]=useState("");
+    const [dSube,setDSube]=useState("");
+    const [dBolum,setDBolum]=useState("");
+    /* Filtrelenmiş personel */
+    const dEmps=filteredActiveEmps.filter(e=>{
+      if(dFirma&&e.firma!==dFirma)return false;
+      if(dSube&&e.sube!==dSube)return false;
+      if(dBolum&&e.bolum!==dBolum)return false;
+      return true;
+    });
+    /* Filtrelenmiş bordro */
+    const dBordro=bordroData.filter(b=>dEmps.some(e=>e.id===b.emp.id));
+    /* Toplamlar */
+    const tot={kisi:dEmps.length,maas:0,yol:0,mesaiT:0,maasT:0,banka:0,bes:0,avans1:0,ke:0,elden:0,devir:0,a2:0,ur:0,odenen:0,kalan:0};
+    dBordro.forEach(b=>{tot.maas+=b.maas;tot.yol+=b.yol;tot.mesaiT+=b.mesaiT;tot.maasT+=b.maasT;tot.banka+=b.banka;tot.bes+=b.bes;tot.avans1+=b.avans1;tot.ke+=b.ke;tot.elden+=b.elden;tot.devir+=b.devir;tot.a2+=b.a2;tot.ur+=b.ur;tot.odenen+=b.odenen;tot.kalan+=b.kalan;});
+    /* Firma bazlı özet */
+    const firmaOzet={};dBordro.forEach(b=>{const f=b.emp.firma||"Belirtilmemiş";if(!firmaOzet[f])firmaOzet[f]={kisi:0,maasT:0,elden:0,kalan:0,a2:0};firmaOzet[f].kisi++;firmaOzet[f].maasT+=b.maasT;firmaOzet[f].elden+=b.elden;firmaOzet[f].kalan+=b.kalan;firmaOzet[f].a2+=b.a2;});
+    /* Şube bazlı özet */
+    const subeOzet={};dBordro.forEach(b=>{const s=b.emp.sube||"Belirtilmemiş";if(!subeOzet[s])subeOzet[s]={kisi:0,maasT:0,elden:0,kalan:0,a2:0};subeOzet[s].kisi++;subeOzet[s].maasT+=b.maasT;subeOzet[s].elden+=b.elden;subeOzet[s].kalan+=b.kalan;subeOzet[s].a2+=b.a2;});
+    /* Bölüm bazlı özet */
+    const bolumOzet={};dBordro.forEach(b=>{const bl=b.emp.bolum||"Belirtilmemiş";if(!bolumOzet[bl])bolumOzet[bl]={kisi:0,maasT:0,elden:0,kalan:0,a2:0};bolumOzet[bl].kisi++;bolumOzet[bl].maasT+=b.maasT;bolumOzet[bl].elden+=b.elden;bolumOzet[bl].kalan+=b.kalan;bolumOzet[bl].a2+=b.a2;});
+    /* Özet kartlar */
+    const totalAvans=D.avanslar.filter(a=>{const dStart=donemKey+"-01";const dEnd=donemKey+"-31";return a.type==="Avans"&&a.date>=dStart&&a.date<=dEnd&&dEmps.some(e=>e.id===a.empId);}).reduce((s,a)=>s+a.amount,0);
+    const stats=[
+      {Ic:IcUsers,l:"Aktif Personel",v:String(tot.kisi),cl:C.teal},
+      {Ic:IcTable,l:"Maaş Toplam",v:fmt(tot.maasT)+" ₺",cl:"#2563eb"},
+      {Ic:IcCard,l:"Elden Toplam",v:fmt(tot.elden)+" ₺",cl:"#16a34a"},
+      {Ic:IcDoc,l:"Kalan Toplam",v:fmt(tot.kalan)+" ₺",cl:tot.kalan>=0?"#7c3aed":"#ef4444"}
+    ];
+    const ozTh={...thS,textAlign:"center"};
+    const ozTd={...tdS,textAlign:"center",fontSize:12};
+    function OzetTablo({title,data,icon}){
+      const entries=Object.entries(data).sort((a,b)=>b[1].maasT-a[1].maasT);
+      const t=entries.reduce((s,e)=>({kisi:s.kisi+e[1].kisi,maasT:s.maasT+e[1].maasT,elden:s.elden+e[1].elden,a2:s.a2+e[1].a2,kalan:s.kalan+e[1].kalan}),{kisi:0,maasT:0,elden:0,a2:0,kalan:0});
+      return <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
+        <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.brd,display:"flex",alignItems:"center",gap:8}}>
+          {icon}
+          <span style={{fontSize:14,fontWeight:700}}>{title}</span>
+          <span style={{fontSize:12,color:C.mut,marginLeft:4}}>({entries.length})</span>
+        </div>
+        <table><thead><tr>
+          <th style={thS}>{title.replace(" Bazlı Özet","")}</th>
+          <th style={ozTh}>Kişi</th>
+          <th style={ozTh}>Maaş T.</th>
+          <th style={ozTh}>Elden</th>
+          <th style={ozTh}>Avans</th>
+          <th style={ozTh}>Kalan</th>
+        </tr></thead><tbody>
+          {entries.map(([k,v])=><tr key={k}>
+            <td style={{...tdS,fontWeight:600}}>{k}</td>
+            <td style={ozTd}>{v.kisi}</td>
+            <td style={ozTd}>{fmt(v.maasT)}</td>
+            <td style={{...ozTd,color:C.grn}}>{fmt(v.elden)}</td>
+            <td style={{...ozTd,color:C.red}}>{v.a2>0?fmt(v.a2):"-"}</td>
+            <td style={{...ozTd,fontWeight:700,color:v.kalan>=0?C.teal:C.red}}>{fmt(v.kalan)}</td>
+          </tr>)}
+          <tr style={{background:"#f0fdf4",fontWeight:700}}>
+            <td style={{...tdS,fontWeight:800}}>TOPLAM</td>
+            <td style={ozTd}>{t.kisi}</td>
+            <td style={ozTd}>{fmt(t.maasT)}</td>
+            <td style={{...ozTd,color:C.grn}}>{fmt(t.elden)}</td>
+            <td style={{...ozTd,color:C.red}}>{t.a2>0?fmt(t.a2):"-"}</td>
+            <td style={{...ozTd,fontWeight:800,color:t.kalan>=0?C.teal:C.red}}>{fmt(t.kalan)}</td>
+          </tr>
+        </tbody></table>
+      </div>;
+    }
+    return <div>
+      <Header icon={<IcGrid/>} title="Yönetim Paneli" sub={donemLabel+" dönemi özet rapor"}/>
+      {/* SÜZME */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/>
+        <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:12,fontWeight:600,color:C.sec}}>Dönem:</span><span style={{fontSize:13,fontWeight:700,color:C.teal}}>{donemLabel}</span>
+          <button onClick={goPrev} style={{background:"none",border:"none",cursor:"pointer",color:C.mut,padding:2}}><IcChevL/></button>
+          <button onClick={goNext} style={{background:"none",border:"none",cursor:"pointer",color:C.mut,padding:2}}><IcChevR/></button>
+        </div>
+        <select value={dFirma} onChange={e=>setDFirma(e.target.value)} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={dSube} onChange={e=>setDSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
+        <select value={dBolum} onChange={e=>setDBolum(e.target.value)} style={{width:160}}><option value="">Tüm Bölümler</option>{D.bols.map(b=><option key={b} value={b}>{b}</option>)}</select>
+        <div style={{flex:1}}/>
+        <span onClick={()=>{setDFirma("");setDSube("");setDBolum("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+      </div>
+      {/* ÖZET KARTLAR */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:20}}>{stats.map((st,i)=><div key={i} style={{background:C.card,borderRadius:12,padding:"20px 24px",border:"1px solid "+C.cardBrd}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,color:st.cl,fontSize:13,fontWeight:500}}><st.Ic/> {st.l}</div><div style={{fontSize:28,fontWeight:800}}>{st.v}</div></div>)}</div>
+      {/* DETAY ÖZET KARTLAR */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+        {[["Maaş",fmt(tot.maas),C.txt],["Yol",fmt(tot.yol),C.sec],["Mesai T.",fmt(tot.mesaiT),C.pur],["Banka",fmt(tot.banka),"#a16207"],["BES",fmt(tot.bes),C.sec],["Avans1",fmt(tot.avans1),C.orange],["Kesinti",fmt(tot.ke),C.red],["Devir",fmt(tot.devir),C.blu]].map(([l,v,cl],i)=><div key={i} style={{background:C.card,borderRadius:10,padding:"12px 16px",border:"1px solid "+C.brdLt}}>
+          <div style={{fontSize:11,color:C.sec,fontWeight:600,marginBottom:4}}>{l}</div>
+          <div style={{fontSize:16,fontWeight:700,color:cl}}>{v} ₺</div>
+        </div>)}
+      </div>
+      {/* ÖZET TABLOLAR */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+        <OzetTablo title="Firma Bazlı Özet" data={firmaOzet} icon={<IcFlag/>}/>
+        <OzetTablo title="Şube Bazlı Özet" data={subeOzet} icon={<IcFlag/>}/>
+      </div>
+      <div style={{marginBottom:20}}>
+        <OzetTablo title="Bölüm Bazlı Özet" data={bolumOzet} icon={<IcFlag/>}/>
+      </div>
+      {/* PERSONEL DETAY TABLOSU */}
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden",marginBottom:20}}>
+        <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.brd}}>
+          <span style={{fontSize:14,fontWeight:700}}>Personel Detay</span>
+          <span style={{fontSize:12,color:C.mut,marginLeft:8}}>({dBordro.length} kişi)</span>
+        </div>
+        <div style={{overflow:"auto"}}><table><thead><tr>
+          {["Ad Soyad","Firma","Şube","Bölüm","Gün","Maaş T.","Elden","Avans","Kalan"].map(h=><th key={h} style={{...thS,textAlign:h==="Ad Soyad"?"left":"center"}}>{h}</th>)}
+        </tr></thead><tbody>
+          {dBordro.map(b=><tr key={b.emp.id}>
+            <td style={{...tdS,fontWeight:600}}>{b.emp.name}</td>
+            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.firma}</td>
+            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.sube}</td>
+            <td style={{...tdS,fontSize:12,color:C.sec}}>{b.emp.bolum}</td>
+            <td style={ozTd}>{b.gun}</td>
+            <td style={ozTd}>{fmt(b.maasT)}</td>
+            <td style={{...ozTd,color:C.grn}}>{fmt(b.elden)}</td>
+            <td style={{...ozTd,color:C.red}}>{b.a2>0?fmt(b.a2):"-"}</td>
+            <td style={{...ozTd,fontWeight:700,color:b.kalan>=0?C.teal:C.red}}>{fmt(b.kalan)}</td>
+          </tr>)}
+        </tbody></table></div>
+      </div>
+      {/* HIZLI İŞLEMLER */}
       <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd}}><div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Hızlı İşlemler</div><div style={{display:"flex",gap:12}}>{[["Puantaja Git","puantaj"],["Yeni Personel Ekle","personel"],["Maaşları Hesapla","bordro"]].map(([l,k])=><button key={k} onClick={()=>setPage(k)} style={{padding:"10px 24px",borderRadius:8,border:"1.5px solid "+C.teal,background:C.tealLt,color:C.teal,fontSize:13,fontWeight:600,cursor:"pointer"}}>{l}</button>)}</div></div>
     </div>;
   }
