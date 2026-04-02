@@ -546,13 +546,17 @@ function App(){
 
   /* BORDRO INPUT - local state, save on blur, format on display */
   function ManualInput({empId,field,dbVal,onSave,disabled,style:sx}){
-    const [txt,setTxt]=useState(String(dbVal||""));
+    const [txt,setTxt]=useState("");
     const [editing,setEditing]=useState(false);
     const focused=useRef(false);
-    useEffect(()=>{if(!focused.current)setTxt(String(dbVal||""));},[dbVal]);
-    const numVal=Number(String(txt).replace(/\./g,"").replace(",","."))||0;
-    const display=editing?txt:(numVal?fmt(numVal):"");
-    return <input type="text" inputMode="decimal" value={display} onChange={e=>setTxt(e.target.value)} onFocus={()=>{focused.current=true;setEditing(true);setTxt(numVal?String(numVal):"");}} onBlur={()=>{focused.current=false;setEditing(false);onSave(empId,field,txt);}} style={sx} placeholder="0" readOnly={disabled}/>;
+    const parseNum=(s)=>Number(String(s||"").replace(/\./g,"").replace(",","."))||0;
+    const dbNum=parseNum(dbVal);
+    useEffect(()=>{if(!focused.current)setTxt(dbNum?String(dbNum).replace(".",","):"");},[dbVal]);
+    function handleFocus(){focused.current=true;setEditing(true);setTxt(dbNum?String(dbNum).replace(".",","):"");}
+    function handleBlur(){focused.current=false;setEditing(false);const n=parseNum(txt);onSave(empId,field,n?String(n):"");}
+    function handleChange(e){const v=e.target.value.replace(/[^0-9,]/g,"");setTxt(v);}
+    const display=editing?txt:(dbNum?fmt(dbNum):"");
+    return <input type="text" inputMode="decimal" value={display} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} style={sx} placeholder="0" readOnly={disabled}/>;
   }
 
   /* BORDRO */
