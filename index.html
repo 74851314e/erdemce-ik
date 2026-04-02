@@ -486,9 +486,9 @@ function App(){
           <button onClick={goPrev} style={{background:"none",border:"none",cursor:"pointer",color:C.mut,padding:2}}><IcChevL/></button>
           <button onClick={goNext} style={{background:"none",border:"none",cursor:"pointer",color:C.mut,padding:2}}><IcChevR/></button>
         </div>
-        <select value={dFirma} onChange={e=>setDFirma(e.target.value)} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
-        <select value={dSube} onChange={e=>setDSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
-        <select value={dBolum} onChange={e=>setDBolum(e.target.value)} style={{width:160}}><option value="">Tüm Bölümler</option>{allBols.map(b=><option key={b} value={b}>{b}</option>)}</select>
+        <select value={dFirma} onChange={e=>{setDFirma(e.target.value);setDSube("");setDBolum("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={dSube} onChange={e=>setDSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(dFirma?getFirmaSubs(dFirma):userSubs).map(s=><option key={s} value={s}>{s}</option>)}</select>
+        <select value={dBolum} onChange={e=>setDBolum(e.target.value)} style={{width:160}}><option value="">Tüm Bölümler</option>{(dFirma?getFirmaBols(dFirma):allBols).map(b=><option key={b} value={b}>{b}</option>)}</select>
         <div style={{flex:1}}/>
         <span onClick={()=>{setDFirma("");setDSube("");setDBolum("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
@@ -638,11 +638,11 @@ function App(){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{f("firma",e.target.value);f("sube","");f("bolum","");f("gorev","");}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):allSubs).map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):[]).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaBols(form.firma):allBols).map(x=><option key={x}>{x}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaGorevler(form.firma):allGorevler).map(g=><option key={g}>{g}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaBols(form.firma):[]).map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaGorevler(form.firma):[]).map(g=><option key={g}>{g}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Aylık Maaş (₺)</div><input type="number" value={form.maas} onChange={e=>f("maas",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yol Vb. Ek (₺)</div><input type="number" value={form.yol} onChange={e=>f("yol",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Sabit Avans (Aylık) (₺)</div><input type="number" value={form.sabitAvans} onChange={e=>f("sabitAvans",e.target.value)}/></div>
@@ -678,8 +678,8 @@ function App(){
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
         <IcFilter/>
         <input placeholder="Personel Ara..." value={pSearch} onChange={e=>setPSearch(e.target.value)} style={{width:180}}/>
-        <select value={pFirma} onChange={e=>setPFirma(e.target.value)} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(x=><option key={x} value={x}>{x}</option>)}</select>
-        <select value={pSube} onChange={e=>setPSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{userSubs.map(x=><option key={x} value={x}>{x}</option>)}</select>
+        <select value={pFirma} onChange={e=>{setPFirma(e.target.value);setPSube("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(x=><option key={x} value={x}>{x}</option>)}</select>
+        <select value={pSube} onChange={e=>setPSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(pFirma?getFirmaSubs(pFirma):userSubs).map(x=><option key={x} value={x}>{x}</option>)}</select>
         <div style={{flex:1}}/>
         <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
@@ -856,8 +856,8 @@ function App(){
       </div>}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
         <input placeholder="Ara..." style={{width:140}}/>
-        <select value={bFirma} onChange={e=>setBFirma(e.target.value)} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
-        <select value={bSube} onChange={e=>setBSube(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
+        <select value={bFirma} onChange={e=>{setBFirma(e.target.value);setBSube("");}} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={bSube} onChange={e=>setBSube(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{(bFirma?getFirmaSubs(bFirma):userSubs).map(s=><option key={s} value={s}>{s}</option>)}</select>
         <div style={{flex:1}}/>
         <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
         <BtnO><IcDl/> Excel İndir</BtnO>
@@ -1081,8 +1081,8 @@ function App(){
       {/* FİLTRELER */}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
         <IcFilter/><input ref={ptSearchRef} placeholder="Personel Ara..." defaultValue={ptSearch} onKeyDown={e=>{if(e.key==="Enter")setPtSearch(e.target.value);}} onBlur={e=>setPtSearch(e.target.value)} style={{width:160}}/>
-        <select value={ptF} onChange={e=>setPtF(e.target.value)} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
-        <select value={ptS} onChange={e=>setPtS(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
+        <select value={ptF} onChange={e=>{setPtF(e.target.value);setPtS("");}} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
+        <select value={ptS} onChange={e=>setPtS(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{(ptF?getFirmaSubs(ptF):userSubs).map(s=><option key={s} value={s}>{s}</option>)}</select>
         {/* DURUM ÇOK SEÇİMLİ */}
         <div style={{position:"relative"}}>
           <div onClick={()=>setPtDurDrop(!ptDurDrop)} style={{padding:"10px 14px",background:"#f6f7f9",border:"1.5px solid "+C.brd,borderRadius:8,fontSize:13,cursor:"pointer",minWidth:160,color:ptDs.length?C.txt:C.mut,userSelect:"none"}}>
