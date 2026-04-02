@@ -81,10 +81,20 @@ function fmt(n){return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:2
 
 /* DEFAULT DB */
 const defaultDB={
-  firms:["Mnl Gıda","İskan Gıda","Kantarcı Gıda","Demkan Gıda","Manolya Gıda"],
-  subs:["Sahrayıcedit","Suadiye","Çekmeköy","Bostancı","Kısıklı"],
-  bols:["Baklava","Börek","Çikolata","Dep-Gid-Tek","Hamur"],
-  gorevler:["Üretim Müdürü","Usta","Kalfa","Çırak","Mühendis","Teknisyen"],
+  firmaList:[
+    {id:1,kod:"MNL",ad:"Mnl Gıda",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:"",
+      subeler:[{id:1,ad:"Sahrayıcedit",adres:"",telefon:"",eposta:""},{id:2,ad:"Suadiye",adres:"",telefon:"",eposta:""},{id:3,ad:"Çekmeköy",adres:"",telefon:"",eposta:""}],
+      bolumler:["Baklava","Börek","Çikolata","Dep-Gid-Tek","Hamur"],
+      gorevler:["Üretim Müdürü","Usta","Kalfa","Çırak","Mühendis","Teknisyen"]
+    },
+    {id:2,kod:"ISK",ad:"İskan Gıda",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:"",
+      subeler:[{id:4,ad:"Bostancı",adres:"",telefon:"",eposta:""}],bolumler:["Baklava","Börek"],gorevler:["Usta","Kalfa","Çırak"]},
+    {id:3,kod:"KNT",ad:"Kantarcı Gıda",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:"",
+      subeler:[{id:5,ad:"Kısıklı",adres:"",telefon:"",eposta:""}],bolumler:["Baklava"],gorevler:["Usta","Kalfa"]},
+    {id:4,kod:"DMK",ad:"Demkan Gıda",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:"",subeler:[],bolumler:[],gorevler:[]},
+    {id:5,kod:"MNY",ad:"Manolya Gıda",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:"",subeler:[],bolumler:[],gorevler:[]}
+  ],
+  nextFirmaId:6,nextSubeId:6,
   durumlar:["S","E","K","."],
   izinGunleri:["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","CP"],
   employees:[
@@ -211,6 +221,16 @@ function App(){
   const setDb=(updater,logEntry)=>{setDbRaw(prev=>{const next=typeof updater==="function"?updater(prev):{...prev,...updater};if(logEntry&&curUser){const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,...logEntry};next.logs=[log,...(next.logs||[])].slice(0,500);}saveDB(next);return next;});};
   const addLog=(action,detail)=>({action,detail});
   const D=db;
+  /* FirmaList → eski diziler (geriye uyumluluk) */
+  const FL=D.firmaList||[];
+  D.firms=FL.map(f=>f.ad);
+  D.subs=[...new Set(FL.flatMap(f=>(f.subeler||[]).map(s=>s.ad)))];
+  D.bols=[...new Set(FL.flatMap(f=>f.bolumler||[]))];
+  D.gorevler=[...new Set(FL.flatMap(f=>f.gorevler||[]))];
+  function getFirma(ad){return FL.find(f=>f.ad===ad);}
+  function getFirmaSubs(ad){const f=getFirma(ad);return f?(f.subeler||[]).map(s=>s.ad):D.subs;}
+  function getFirmaBols(ad){const f=getFirma(ad);return f?(f.bolumler||[]):D.bols;}
+  function getFirmaGorevler(ad){const f=getFirma(ad);return f?(f.gorevler||[]):D.gorevler;}
 
   /* Kullanıcı DB'den güncellendiğinde curUser'ı senkronize et */
   useEffect(()=>{
@@ -617,12 +637,12 @@ function App(){
         <div style={{fontSize:16,fontWeight:700,marginBottom:20}}>{editId?"Personel Düzenle":"Yeni Personel Ekle"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{D.gorevler.map(g=><option key={g}>{g}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>f("firma",e.target.value)}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{userSubs.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{f("firma",e.target.value);f("sube","");f("bolum","");f("gorev","");}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):D.subs).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{D.bols.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaBols(form.firma):D.bols).map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaGorevler(form.firma):D.gorevler).map(g=><option key={g}>{g}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Aylık Maaş (₺)</div><input type="number" value={form.maas} onChange={e=>f("maas",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yol Vb. Ek (₺)</div><input type="number" value={form.yol} onChange={e=>f("yol",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Sabit Avans (Aylık) (₺)</div><input type="number" value={form.sabitAvans} onChange={e=>f("sabitAvans",e.target.value)}/></div>
@@ -1214,16 +1234,118 @@ function App(){
 
   /* AYARLAR */
   function AyarlarPage(){
-    const fO=listOps("firms"),sO=listOps("subs"),bO=listOps("bols"),gO=listOps("gorevler"),dO=listOps("durumlar"),iO=listOps("izinGunleri");
+    const dO=listOps("durumlar"),iO=listOps("izinGunleri");
     const [uf,setUf]=useState({name:"",pass:"",role:"kullanici"});
     const [editUid,setEditUid]=useState(null);
     const [editPerms,setEditPerms]=useState({});
     const [editFirmalar,setEditFirmalar]=useState([]);
     const [editSubeler,setEditSubeler]=useState([]);
+    const [selFirmaId,setSelFirmaId]=useState(null);
+    const [firmaForm,setFirmaForm]=useState({kod:"",ad:"",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:""});
+    const [subeForm,setSubeForm]=useState({ad:"",adres:"",telefon:"",eposta:""});
+    const [bolVal,setBolVal]=useState("");
+    const [gorVal,setGorVal]=useState("");
     const addUser=()=>{if(!uf.name||!uf.pass)return alert("Ad ve Şifre zorunlu!");setDb(p=>({...p,users:[...p.users,{id:p.nextUserId,name:uf.name,pass:uf.pass,role:uf.role,firmalar:[],subeler:[],perms:MODULES.reduce((a,m)=>({...a,[m.key]:{gor:true,ekle:false,degistir:false,sil:false}}),{})}],nextUserId:p.nextUserId+1}),addLog("Kullanıcı Eklendi",uf.name+" ("+uf.role+")"));setUf({name:"",pass:"",role:"kullanici"});};
     const savePerms=(uid)=>{const u=D.users.find(x=>x.id===uid);setDb(p=>({...p,users:p.users.map(u=>u.id===uid?{...u,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:u)}),addLog("Yetki Güncellendi",u?u.name:"#"+uid));setEditUid(null);};
+    const selFirma=FL.find(f=>f.id===selFirmaId);
+    /* Firma CRUD */
+    function addFirma(){if(!firmaForm.kod||!firmaForm.ad)return alert("Firma kodu ve adı zorunlu!");setDb(p=>({...p,firmaList:[...(p.firmaList||[]),{...firmaForm,id:p.nextFirmaId||6,subeler:[],bolumler:[],gorevler:[]}],nextFirmaId:(p.nextFirmaId||6)+1}),addLog("Firma Eklendi",firmaForm.ad));setFirmaForm({kod:"",ad:"",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:""});}
+    function updateFirma(id,field,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===id?{...f,[field]:val}:f)}),addLog("Firma Güncellendi",field+": "+val));}
+    function delFirma(id){const f=FL.find(x=>x.id===id);if(!confirm(f?.ad+" silinsin mi?"))return;setDb(p=>({...p,firmaList:(p.firmaList||[]).filter(x=>x.id!==id)}),addLog("Firma Silindi",f?.ad));if(selFirmaId===id)setSelFirmaId(null);}
+    /* Şube CRUD */
+    function addSube(){if(!subeForm.ad||!selFirmaId)return alert("Şube adı zorunlu!");setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:[...(f.subeler||[]),{...subeForm,id:p.nextSubeId||6}]}:f),nextSubeId:(p.nextSubeId||6)+1}),addLog("Şube Eklendi",subeForm.ad));setSubeForm({ad:"",adres:"",telefon:"",eposta:""});}
+    function delSube(sid){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:(f.subeler||[]).filter(s=>s.id!==sid)}:f)}),addLog("Şube Silindi","#"+sid));}
+    function updateSube(sid,field,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:(f.subeler||[]).map(s=>s.id===sid?{...s,[field]:val}:s)}:f)}));}
+    /* Bölüm/Görev CRUD */
+    function addItem(type,val){if(!val||!selFirmaId)return;setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:[...(f[type]||[]),val]}:f)}),addLog(type==="bolumler"?"Bölüm Eklendi":"Görev Eklendi",val));}
+    function delItem(type,i){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).filter((_,idx)=>idx!==i)}:f)}));}
 
-    return <div><Header icon={<IcGear/>} title="Sistem Ayarları" sub="Tanımlar, kullanıcılar ve yedekleme"/>
+    const ff=(k,v)=>setFirmaForm({...firmaForm,[k]:v});
+    const sf=(k,v)=>setSubeForm({...subeForm,[k]:v});
+    const inpS={fontSize:12,padding:"8px 10px"};
+
+    return <div><Header icon={<IcGear/>} title="Sistem Ayarları" sub="Firma yönetimi, kullanıcılar ve tanımlar"/>
+      {/* FİRMA YÖNETİMİ */}
+      <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Firma Yönetimi</div>
+        {/* Yeni Firma Ekle */}
+        <div style={{background:C.brdLt,borderRadius:10,padding:"16px 20px",marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:10}}>Yeni Firma Ekle</div>
+          <div style={{display:"grid",gridTemplateColumns:"100px 1fr 1fr 120px",gap:10,marginBottom:10}}>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Kod *</div><input value={firmaForm.kod} onChange={e=>ff("kod",e.target.value.toUpperCase())} style={inpS} placeholder="MNL"/></div>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Adı *</div><input value={firmaForm.ad} onChange={e=>ff("ad",e.target.value)} style={inpS} placeholder="Firma adı"/></div>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Merkez Adresi</div><input value={firmaForm.adres} onChange={e=>ff("adres",e.target.value)} style={inpS}/></div>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Türü</div><input value={firmaForm.firmaTuru} onChange={e=>ff("firmaTuru",e.target.value)} style={inpS} placeholder="Ltd/AŞ"/></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 100px",gap:10}}>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi No</div><input value={firmaForm.vergiNo} onChange={e=>ff("vergiNo",e.target.value)} style={inpS}/></div>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi Dairesi</div><input value={firmaForm.vergiDairesi} onChange={e=>ff("vergiDairesi",e.target.value)} style={inpS}/></div>
+            <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Telefon</div><input value={firmaForm.telefon} onChange={e=>ff("telefon",e.target.value)} style={inpS}/></div>
+            <Btn bg={C.teal} onClick={addFirma} style={{height:36,marginTop:16,fontSize:12}}>Ekle</Btn>
+          </div>
+        </div>
+        {/* Firma Listesi */}
+        <table><thead><tr>{["KOD","FİRMA ADI","VERGİ NO","TELEFON","TÜR","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{FL.map(f=><tr key={f.id} style={{background:selFirmaId===f.id?"#eff6ff":"transparent",cursor:"pointer"}} onClick={()=>setSelFirmaId(f.id)}>
+          <td style={{...tdS,fontWeight:700,color:C.teal}}>{f.kod}</td>
+          <td style={{...tdS,fontWeight:600}}>{f.ad}</td>
+          <td style={{...tdS,fontSize:12,color:C.sec}}>{f.vergiNo||"-"}</td>
+          <td style={{...tdS,fontSize:12,color:C.sec}}>{f.telefon||"-"}</td>
+          <td style={{...tdS,fontSize:12,color:C.sec}}>{f.firmaTuru||"-"}</td>
+          <td style={tdS}><button onClick={e=>{e.stopPropagation();delFirma(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></td>
+        </tr>)}</tbody></table>
+        {FL.length===0&&<div style={{padding:20,textAlign:"center",color:C.mut}}>Henüz firma eklenmemiş</div>}
+      </div>
+      {/* SEÇİLİ FİRMA DETAY */}
+      {selFirma&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.teal,marginBottom:20}}>
+        <div style={{fontSize:16,fontWeight:700,color:C.teal,marginBottom:4}}>{selFirma.kod} — {selFirma.ad}</div>
+        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Firma detaylarını düzenleyin, şube/bölüm/görev ekleyin</div>
+        {/* Firma Bilgileri Düzenle */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:20}}>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Merkez Adresi</div><input value={selFirma.adres||""} onChange={e=>updateFirma(selFirma.id,"adres",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi No</div><input value={selFirma.vergiNo||""} onChange={e=>updateFirma(selFirma.id,"vergiNo",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi Dairesi</div><input value={selFirma.vergiDairesi||""} onChange={e=>updateFirma(selFirma.id,"vergiDairesi",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Telefon</div><input value={selFirma.telefon||""} onChange={e=>updateFirma(selFirma.id,"telefon",e.target.value)} style={inpS}/></div>
+        </div>
+        {/* ŞUBELER */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Şubeler ({(selFirma.subeler||[]).length})</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 80px",gap:8,marginBottom:10}}>
+            <input value={subeForm.ad} onChange={e=>sf("ad",e.target.value)} placeholder="Şube Adı *" style={inpS}/>
+            <input value={subeForm.adres} onChange={e=>sf("adres",e.target.value)} placeholder="Adres" style={inpS}/>
+            <input value={subeForm.telefon} onChange={e=>sf("telefon",e.target.value)} placeholder="Telefon" style={inpS}/>
+            <input value={subeForm.eposta} onChange={e=>sf("eposta",e.target.value)} placeholder="E-posta" style={inpS}/>
+            <Btn bg={C.teal} onClick={addSube} style={{fontSize:11,padding:"6px 12px",height:36}}>Ekle</Btn>
+          </div>
+          {(selFirma.subeler||[]).length>0&&<table><thead><tr>{["ŞUBE","ADRES","TELEFON","E-POSTA","SİL"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+          <tbody>{(selFirma.subeler||[]).map(s=><tr key={s.id}>
+            <td style={{...tdS,fontWeight:600}}><input value={s.ad} onChange={e=>updateSube(s.id,"ad",e.target.value)} style={{...inpS,border:"none",background:"transparent",fontWeight:600,padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.adres||""} onChange={e=>updateSube(s.id,"adres",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.telefon||""} onChange={e=>updateSube(s.id,"telefon",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.eposta||""} onChange={e=>updateSube(s.id,"eposta",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><button onClick={()=>delSube(s.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></td>
+          </tr>)}</tbody></table>}
+        </div>
+        {/* BÖLÜMLER VE GÖREVLER */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Bölümler ({(selFirma.bolumler||[]).length})</div>
+            <div style={{display:"flex",gap:8,marginBottom:8}}>
+              <input value={bolVal} onChange={e=>setBolVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} placeholder="Bölüm ekle..." style={{...inpS,flex:1}}/>
+              <button onClick={()=>{if(bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
+            </div>
+            {(selFirma.bolumler||[]).map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}><span>{b}</span><button onClick={()=>delItem("bolumler",i)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></div>)}
+          </div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Görevler ({(selFirma.gorevler||[]).length})</div>
+            <div style={{display:"flex",gap:8,marginBottom:8}}>
+              <input value={gorVal} onChange={e=>setGorVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} placeholder="Görev ekle..." style={{...inpS,flex:1}}/>
+              <button onClick={()=>{if(gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
+            </div>
+            {(selFirma.gorevler||[]).map((g,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}><span>{g}</span><button onClick={()=>delItem("gorevler",i)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></div>)}
+          </div>
+        </div>
+      </div>}
       {/* KULLANICILAR */}
       <div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
         <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>Kullanıcı Yönetimi</div>
@@ -1254,7 +1376,6 @@ function App(){
           {PERMS.map(p=><td key={p} style={{...tdS,textAlign:"center"}}><input type="checkbox" checked={editPerms[m.key]?.[p]||false} onChange={e=>{const np={...editPerms};if(!np[m.key])np[m.key]={gor:false,ekle:false,degistir:false,sil:false};np[m.key][p]=e.target.checked;setEditPerms(np);}} style={{width:"auto",cursor:"pointer"}}/></td>)}
         </tr>)}</tbody></table>
         <div style={{display:"flex",gap:10,marginTop:16}}><Btn bg={C.blu} onClick={()=>savePerms(editUid)}><IcSave/> Kaydet</Btn><Btn bg="#6b7280" onClick={()=>setEditUid(null)}><IcX/> İptal</Btn></div>
-        {/* FİRMA / ŞUBE SEÇİMİ */}
         <div style={{marginTop:20,paddingTop:20,borderTop:"1px solid "+C.brd}}>
           <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Erişim İzni: Firmalar ve Şubeler</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -1275,14 +1396,8 @@ function App(){
           </div>
         </div>
       </div>}
-      {/* TANIMLAR */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:20}}>
-        <EditableList title="Firma" items={D.firms} {...fO}/>
-        <EditableList title="Şube" items={D.subs} {...sO}/>
-        <EditableList title="Bölüm" items={D.bols} {...bO}/>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:20}}>
-        <EditableList title="Görev" items={D.gorevler} {...gO}/>
+      {/* GENEL TANIMLAR */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
         <EditableList title="Durum" items={D.durumlar} {...dO}/>
         <EditableList title="İzin Günü" items={D.izinGunleri} {...iO}/>
       </div>
