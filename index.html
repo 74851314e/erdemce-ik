@@ -638,7 +638,7 @@ function App(){
         <div style={{fontSize:16,fontWeight:700,marginBottom:20}}>{editId?"Personel Düzenle":"Yeni Personel Ekle"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{f("firma",e.target.value);f("sube","");f("bolum","");f("gorev","");}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{const v=e.target.value;setForm(prev=>({...prev,firma:v,sube:"",bolum:"",gorev:""}));}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):[]).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
