@@ -124,6 +124,7 @@ const defaultDB={
   bordroDevir:{},
   bordroSnapshot:{},
   logs:[],
+  kasaKupurler:[200,100,50,20,10,5],
 };
 
 /* VERİ DEPOLAMA — Sunucu üzerinden otomatik kayıt, tüm tarayıcılar aynı veriyi görür */
@@ -763,10 +764,12 @@ function App(){
 
   /* BORDRO */
   function BordroPage(){
+    const bSearchRef=useRef();
     const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLowerCase().includes(bSearch.toLowerCase()))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
-    const [kasaKupurler,setKasaKupurler]=useState([200,100,50,20,10,5]);
-    function hesaplaKupur(){const t=Number(String(kasaTutar).replace(/\./g,"").replace(",","."))||0;if(t<=0)return[];let kalan=t;return kasaKupurler.map(k=>{const adet=Math.floor(kalan/k);kalan=Math.round((kalan-adet*k)*100)/100;return{kupur:k,adet,toplam:adet*k};}).filter(x=>x.adet>0);}
+    const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
+    function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
+    function hesaplaKupur(){const t=Number(String(kasaTutar).replace(/\./g,"").replace(",","."))||0;if(t<=0)return[];let kalan=t;return kasaKupurler.filter(k=>k>0).map(k=>{const adet=Math.floor(kalan/k);kalan=Math.round((kalan-adet*k)*100)/100;return{kupur:k,adet,toplam:adet*k};}).filter(x=>x.adet>0);}
     const cols=["ADI SOYADI","D","İZİN GÜNÜ","MAAŞI","GÜN","YOL","SAAT","MESAİ","FM","RT","MESAİ T.","MAAŞ T.","BANKA","BES","AVANS1","KES-EKL","YATAN","ELDEN","DEVİR","AVANS2","ÜRÜN","ÖDENEN","KALAN","İMZA"];
     const tc={textAlign:"center",fontSize:11,padding:"8px 4px",whiteSpace:"nowrap"};
     const tot=filtered.reduce((t,b)=>({maas:t.maas+b.maas,gun:t.gun+b.gun,yol:t.yol+b.yol,saat:t.saat+b.saat,mesai:t.mesai+b.mesai,fm:t.fm+b.fmVal,rt:t.rt+b.rtVal,mesaiT:t.mesaiT+b.mesaiT,maasT:t.maasT+b.maasT,banka:t.banka+b.banka,bes:t.bes+b.bes,a1:t.a1+b.avans1,ke:t.ke+b.ke,yt:t.yt+b.yatan,el:t.el+b.elden,dv:t.dv+b.devir,a2:t.a2+b.a2,ur:t.ur+b.ur,od:t.od+b.odenen,kl:t.kl+b.kalan}),{maas:0,gun:0,yol:0,saat:0,mesai:0,fm:0,rt:0,mesaiT:0,maasT:0,banka:0,bes:0,a1:0,ke:0,yt:0,el:0,dv:0,a2:0,ur:0,od:0,kl:0});
@@ -858,7 +861,7 @@ function App(){
         <strong>Kapatılmış dönemler:</strong> {kapaliList.join(" | ")}
       </div>}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
-        <input placeholder="Ad Soyad Ara..." value={bSearch} onChange={e=>setBSearch(e.target.value)} style={{width:160}}/>
+        <input ref={bSearchRef} placeholder="Ad Soyad Ara..." defaultValue={bSearch} onKeyDown={e=>{if(e.key==="Enter")setBSearch(e.target.value);}} onBlur={e=>setBSearch(e.target.value)} style={{width:160}}/>
         <select value={bFirma} onChange={e=>{setBFirma(e.target.value);setBSube("");}} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
         <select value={bSube} onChange={e=>setBSube(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{(bFirma?getFirmaSubs(bFirma):userSubs).map(s=><option key={s} value={s}>{s}</option>)}</select>
         <div style={{flex:1}}/>
@@ -874,7 +877,7 @@ function App(){
           <input type="text" inputMode="decimal" value={kasaTutar} onChange={e=>setKasaTutar(e.target.value.replace(/[^0-9,]/g,""))} placeholder="Tutar girin..." style={{width:"100%",padding:"8px 10px",fontSize:14,fontWeight:700,borderRadius:6,border:"1.5px solid #fca5a5",marginBottom:8,textAlign:"center",color:C.red}}/>
           <div style={{fontSize:10,color:C.sec,marginBottom:6}}>Kupürler (tıkla düzenle):</div>
           <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
-            {kasaKupurler.map((k,i)=><input key={i} type="number" value={k} onChange={e=>{const n=[...kasaKupurler];n[i]=Number(e.target.value)||0;setKasaKupurler(n);}} style={{width:42,padding:"4px 2px",fontSize:11,textAlign:"center",border:"1px solid #fca5a5",borderRadius:4,background:"#fff"}}/>)}
+            {kasaKupurler.map((k,i)=><input key={i} type="number" value={k} onChange={e=>setKupur(i,e.target.value)} style={{width:42,padding:"4px 2px",fontSize:11,textAlign:"center",border:"1px solid #fca5a5",borderRadius:4,background:"#fff"}}/>)}
           </div>
           {kasaTutar&&hesaplaKupur().length>0&&<div>
             {hesaplaKupur().map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:700,color:C.red,padding:"3px 0",borderBottom:"1px solid #fecaca"}}>
