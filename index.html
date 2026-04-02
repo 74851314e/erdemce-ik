@@ -1040,7 +1040,7 @@ function App(){
       w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Puantaj</title><style>"+css+"</style></head><body>");
       w.document.write("<div class='hdr'><h3>"+donem+"</h3><h1>PUANTAJ TABLOSU</h1><h2>"+firmaLabel+" — "+subeLabel+"</h2></div>");
       let th="<tr><th>PERSONEL</th><th>İZİN</th>";
-      for(let i=1;i<=pDays;i++){const rtD=isHolidayDay(i);th+="<th style='background:"+(rtD?"#dbeafe;color:#2563eb":"#e8e8e8")+"'>"+i+"</th>";}
+      for(let i=1;i<=pDays;i++){const rtD=isHolidayDay(i);const dn=dayN[new Date(pYear,pMonth,i).getDay()];th+="<th style='background:"+(rtD?"#dbeafe;color:#2563eb":"#e8e8e8")+"'>"+i+"<br><span style=\"font-weight:400;font-size:7px\">"+dn+"</span></th>";}
       th+="<th class='sm'>SA</th><th class='sm'>MS</th><th class='sm'>FM</th><th style='background:#dbeafe'>RT</th><th class='sm'>Yİ</th></tr>";
       let rows="";
       filtered.forEach(emp=>{
