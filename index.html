@@ -1258,7 +1258,8 @@ function App(){
     function updateSube(sid,field,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:(f.subeler||[]).map(s=>s.id===sid?{...s,[field]:val}:s)}:f)}));}
     /* Bölüm/Görev CRUD */
     function addItem(type,val){if(!val||!selFirmaId)return;setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:[...(f[type]||[]),val]}:f)}),addLog(type==="bolumler"?"Bölüm Eklendi":"Görev Eklendi",val));}
-    function delItem(type,i){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).filter((_,idx)=>idx!==i)}:f)}));}
+    function delItem(type,i){const old=(selFirma[type]||[])[i];setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).filter((_,idx)=>idx!==i)}:f)}),addLog(type==="bolumler"?"Bölüm Silindi":"Görev Silindi",old));}
+    function editItem(type,i,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).map((x,idx)=>idx===i?val:x)}:f)}));}
 
     const ff=(k,v)=>setFirmaForm({...firmaForm,[k]:v});
     const sf=(k,v)=>setSubeForm({...subeForm,[k]:v});
@@ -1292,7 +1293,10 @@ function App(){
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.vergiNo||"-"}</td>
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.telefon||"-"}</td>
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.firmaTuru||"-"}</td>
-          <td style={tdS}><button onClick={e=>{e.stopPropagation();delFirma(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></td>
+          <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
+            <button onClick={e=>{e.stopPropagation();setSelFirmaId(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
+            <button onClick={e=>{e.stopPropagation();delFirma(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>
+          </span></td>
         </tr>)}</tbody></table>
         {FL.length===0&&<div style={{padding:20,textAlign:"center",color:C.mut}}>Henüz firma eklenmemiş</div>}
       </div>
@@ -1301,8 +1305,13 @@ function App(){
         <div style={{fontSize:16,fontWeight:700,color:C.teal,marginBottom:4}}>{selFirma.kod} — {selFirma.ad}</div>
         <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Firma detaylarını düzenleyin, şube/bölüm/görev ekleyin</div>
         {/* Firma Bilgileri Düzenle */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:20}}>
+        <div style={{display:"grid",gridTemplateColumns:"100px 1fr 1fr 120px",gap:10,marginBottom:10}}>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Kodu</div><input value={selFirma.kod||""} onChange={e=>updateFirma(selFirma.id,"kod",e.target.value.toUpperCase())} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Adı</div><input value={selFirma.ad||""} onChange={e=>updateFirma(selFirma.id,"ad",e.target.value)} style={inpS}/></div>
           <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Merkez Adresi</div><input value={selFirma.adres||""} onChange={e=>updateFirma(selFirma.id,"adres",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Türü</div><input value={selFirma.firmaTuru||""} onChange={e=>updateFirma(selFirma.id,"firmaTuru",e.target.value)} style={inpS}/></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
           <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi No</div><input value={selFirma.vergiNo||""} onChange={e=>updateFirma(selFirma.id,"vergiNo",e.target.value)} style={inpS}/></div>
           <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi Dairesi</div><input value={selFirma.vergiDairesi||""} onChange={e=>updateFirma(selFirma.id,"vergiDairesi",e.target.value)} style={inpS}/></div>
           <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Telefon</div><input value={selFirma.telefon||""} onChange={e=>updateFirma(selFirma.id,"telefon",e.target.value)} style={inpS}/></div>
@@ -1334,7 +1343,10 @@ function App(){
               <input value={bolVal} onChange={e=>setBolVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} placeholder="Bölüm ekle..." style={{...inpS,flex:1}}/>
               <button onClick={()=>{if(bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
             </div>
-            {(selFirma.bolumler||[]).map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}><span>{b}</span><button onClick={()=>delItem("bolumler",i)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></div>)}
+            {(selFirma.bolumler||[]).map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
+              <input value={b} onChange={e=>editItem("bolumler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
+              <button onClick={()=>delItem("bolumler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
+            </div>)}
           </div>
           <div>
             <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Görevler ({(selFirma.gorevler||[]).length})</div>
@@ -1342,7 +1354,10 @@ function App(){
               <input value={gorVal} onChange={e=>setGorVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} placeholder="Görev ekle..." style={{...inpS,flex:1}}/>
               <button onClick={()=>{if(gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
             </div>
-            {(selFirma.gorevler||[]).map((g,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}><span>{g}</span><button onClick={()=>delItem("gorevler",i)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></div>)}
+            {(selFirma.gorevler||[]).map((g,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
+              <input value={g} onChange={e=>editItem("gorevler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
+              <button onClick={()=>delItem("gorevler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
+            </div>)}
           </div>
         </div>
       </div>}
