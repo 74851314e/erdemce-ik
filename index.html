@@ -206,7 +206,7 @@ function App(){
   /* GLOBAL FILTER STATES - persist across re-renders */
   const [pSearch,setPSearch]=useState("");const [pFirma,setPFirma]=useState("");const [pSube,setPSube]=useState("");
   const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);
-  const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");
+  const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");const [bDs,setBDs]=useState([]);const [bDurDrop,setBDurDrop]=useState(false);
   const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
   const fileRef=useRef();
   const ptSearchRef=useRef();
@@ -765,7 +765,7 @@ function App(){
   /* BORDRO */
   function BordroPage(){
     const bSearchRef=useRef();
-    const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLowerCase().includes(bSearch.toLowerCase()))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;return true;});
+    const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLowerCase().includes(bSearch.toLowerCase()))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
     const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
     function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
@@ -864,6 +864,21 @@ function App(){
         <input ref={bSearchRef} placeholder="Ad Soyad Ara..." defaultValue={bSearch} onKeyDown={e=>{if(e.key==="Enter")setBSearch(e.target.value);}} onBlur={e=>setBSearch(e.target.value)} style={{width:160}}/>
         <select value={bFirma} onChange={e=>{setBFirma(e.target.value);setBSube("");}} style={{width:150}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
         <select value={bSube} onChange={e=>setBSube(e.target.value)} style={{width:150}}><option value="">Tüm Şubeler</option>{(bFirma?getFirmaSubs(bFirma):userSubs).map(s=><option key={s} value={s}>{s}</option>)}</select>
+        {/* DURUM ÇOK SEÇİMLİ */}
+        <div style={{position:"relative"}}>
+          <div onClick={()=>setBDurDrop(!bDurDrop)} style={{padding:"10px 14px",background:"#f6f7f9",border:"1.5px solid "+C.brd,borderRadius:8,fontSize:13,cursor:"pointer",minWidth:140,color:bDs.length?C.txt:C.mut,userSelect:"none"}}>
+            {bDs.length?bDs.join(", "):"Tüm Durumlar"}
+          </div>
+          {bDurDrop&&<div style={{position:"absolute",top:"100%",left:0,background:"#fff",border:"1.5px solid "+C.brd,borderRadius:8,padding:8,zIndex:50,minWidth:160,boxShadow:"0 8px 24px rgba(0,0,0,.12)",marginTop:4}}>
+            {D.durumlar.map(d=><label key={d} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 4px",fontSize:13,cursor:"pointer"}}>
+              <input type="checkbox" checked={bDs.includes(d)} onChange={()=>setBDs(prev=>prev.includes(d)?prev.filter(x=>x!==d):[...prev,d])} style={{width:"auto"}}/>{d}
+            </label>)}
+            <div style={{display:"flex",gap:8,marginTop:6,borderTop:"1px solid "+C.brdLt,paddingTop:6}}>
+              {bDs.length>0&&<span onClick={()=>setBDs([])} style={{fontSize:12,color:C.red,cursor:"pointer"}}>Temizle</span>}
+              <span onClick={()=>setBDurDrop(false)} style={{fontSize:12,color:C.teal,cursor:"pointer",marginLeft:"auto"}}>Kapat</span>
+            </div>
+          </div>}
+        </div>
         <div style={{flex:1}}/>
         <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
         <BtnO><IcDl/> Excel İndir</BtnO>
