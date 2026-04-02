@@ -221,16 +221,16 @@ function App(){
   const setDb=(updater,logEntry)=>{setDbRaw(prev=>{const next=typeof updater==="function"?updater(prev):{...prev,...updater};if(logEntry&&curUser){const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,...logEntry};next.logs=[log,...(next.logs||[])].slice(0,500);}saveDB(next);return next;});};
   const addLog=(action,detail)=>({action,detail});
   const D=db;
-  /* FirmaList → eski diziler (geriye uyumluluk) */
-  const FL=D.firmaList||[];
-  D.firms=FL.map(f=>f.ad);
-  D.subs=[...new Set(FL.flatMap(f=>(f.subeler||[]).map(s=>s.ad)))];
-  D.bols=[...new Set(FL.flatMap(f=>f.bolumler||[]))];
-  D.gorevler=[...new Set(FL.flatMap(f=>f.gorevler||[]))];
+  /* FirmaList → türetilmiş diziler */
+  const FL=(D.firmaList||[]);
+  const allFirms=FL.map(f=>f.ad);
+  const allSubs=[...new Set(FL.flatMap(f=>(f.subeler||[]).map(s=>s.ad)))];
+  const allBols=[...new Set(FL.flatMap(f=>f.bolumler||[]))];
+  const allGorevler=[...new Set(FL.flatMap(f=>f.gorevler||[]))];
   function getFirma(ad){return FL.find(f=>f.ad===ad);}
-  function getFirmaSubs(ad){const f=getFirma(ad);return f?(f.subeler||[]).map(s=>s.ad):D.subs;}
-  function getFirmaBols(ad){const f=getFirma(ad);return f?(f.bolumler||[]):D.bols;}
-  function getFirmaGorevler(ad){const f=getFirma(ad);return f?(f.gorevler||[]):D.gorevler;}
+  function getFirmaSubs(ad){const f=getFirma(ad);return f?(f.subeler||[]).map(s=>s.ad):allSubs;}
+  function getFirmaBols(ad){const f=getFirma(ad);return f?(f.bolumler||[]):allBols;}
+  function getFirmaGorevler(ad){const f=getFirma(ad);return f?(f.gorevler||[]):allGorevler;}
 
   /* Kullanıcı DB'den güncellendiğinde curUser'ı senkronize et */
   useEffect(()=>{
@@ -270,15 +270,15 @@ function App(){
     return true;
   }
   const userFirms=useMemo(()=>{
-    if(!curUser||curUser.role==="admin")return D.firms;
+    if(!curUser||curUser.role==="admin")return allFirms;
     const uf=curUser.firmalar||[];
-    return uf.length>0?D.firms.filter(f=>uf.includes(f)):D.firms;
-  },[D.firms,curUser]);
+    return uf.length>0?allFirms.filter(f=>uf.includes(f)):allFirms;
+  },[allFirms,curUser]);
   const userSubs=useMemo(()=>{
-    if(!curUser||curUser.role==="admin")return D.subs;
+    if(!curUser||curUser.role==="admin")return allSubs;
     const us=curUser.subeler||[];
-    return us.length>0?D.subs.filter(s=>us.includes(s)):D.subs;
-  },[D.subs,curUser]);
+    return us.length>0?allSubs.filter(s=>us.includes(s)):allSubs;
+  },[allSubs,curUser]);
   const filteredSortedEmps=useMemo(()=>sortedEmps.filter(canAccessEmp),[sortedEmps,curUser]);
   const filteredActiveEmps=filteredSortedEmps.filter(e=>e.durum!=="K");
 
@@ -488,7 +488,7 @@ function App(){
         </div>
         <select value={dFirma} onChange={e=>setDFirma(e.target.value)} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f} value={f}>{f}</option>)}</select>
         <select value={dSube} onChange={e=>setDSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{userSubs.map(s=><option key={s} value={s}>{s}</option>)}</select>
-        <select value={dBolum} onChange={e=>setDBolum(e.target.value)} style={{width:160}}><option value="">Tüm Bölümler</option>{D.bols.map(b=><option key={b} value={b}>{b}</option>)}</select>
+        <select value={dBolum} onChange={e=>setDBolum(e.target.value)} style={{width:160}}><option value="">Tüm Bölümler</option>{allBols.map(b=><option key={b} value={b}>{b}</option>)}</select>
         <div style={{flex:1}}/>
         <span onClick={()=>{setDFirma("");setDSube("");setDBolum("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
@@ -576,7 +576,7 @@ function App(){
     function toggleAll(){if(allSelected){setSelected({});}else{const s={};filteredEmps.forEach(e=>{s[e.id]=true;});setSelected(s);}}
     function toggleOne(id){setSelected({...selected,[id]:!selected[id]});}
 
-    const bulkFields=[{k:"firma",l:"Firma",opts:D.firms},{k:"sube",l:"Şube",opts:D.subs},{k:"bolum",l:"Bölüm",opts:D.bols},{k:"gorev",l:"Görev",opts:D.gorevler},{k:"durum",l:"Durum",opts:D.durumlar},{k:"izin",l:"İzin Günü",opts:D.izinGunleri}];
+    const bulkFields=[{k:"firma",l:"Firma",opts:allFirms},{k:"sube",l:"Şube",opts:allSubs},{k:"bolum",l:"Bölüm",opts:allBols},{k:"gorev",l:"Görev",opts:allGorevler},{k:"durum",l:"Durum",opts:D.durumlar},{k:"izin",l:"İzin Günü",opts:D.izinGunleri}];
     function applyBulk(){
       if(!bulkField||!bulkVal)return alert("Alan ve değer seçin!");
       const ids=Object.keys(selected).filter(k=>selected[k]).map(Number);
@@ -638,11 +638,11 @@ function App(){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{f("firma",e.target.value);f("sube","");f("bolum","");f("gorev","");}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):D.subs).map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):allSubs).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaBols(form.firma):D.bols).map(x=><option key={x}>{x}</option>)}</select></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaGorevler(form.firma):D.gorevler).map(g=><option key={g}>{g}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bölüm</div><select value={form.bolum} onChange={e=>f("bolum",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaBols(form.firma):allBols).map(x=><option key={x}>{x}</option>)}</select></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Görev</div><select value={form.gorev} onChange={e=>f("gorev",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaGorevler(form.firma):allGorevler).map(g=><option key={g}>{g}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Aylık Maaş (₺)</div><input type="number" value={form.maas} onChange={e=>f("maas",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yol Vb. Ek (₺)</div><input type="number" value={form.yol} onChange={e=>f("yol",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Sabit Avans (Aylık) (₺)</div><input type="number" value={form.sabitAvans} onChange={e=>f("sabitAvans",e.target.value)}/></div>
@@ -1241,25 +1241,37 @@ function App(){
     const [editFirmalar,setEditFirmalar]=useState([]);
     const [editSubeler,setEditSubeler]=useState([]);
     const [selFirmaId,setSelFirmaId]=useState(null);
+    const [ef,setEf]=useState(null); /* editFirma - yerel kopya */
     const [firmaForm,setFirmaForm]=useState({kod:"",ad:"",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:""});
     const [subeForm,setSubeForm]=useState({ad:"",adres:"",telefon:"",eposta:""});
     const [bolVal,setBolVal]=useState("");
     const [gorVal,setGorVal]=useState("");
     const addUser=()=>{if(!uf.name||!uf.pass)return alert("Ad ve Şifre zorunlu!");setDb(p=>({...p,users:[...p.users,{id:p.nextUserId,name:uf.name,pass:uf.pass,role:uf.role,firmalar:[],subeler:[],perms:MODULES.reduce((a,m)=>({...a,[m.key]:{gor:true,ekle:false,degistir:false,sil:false}}),{})}],nextUserId:p.nextUserId+1}),addLog("Kullanıcı Eklendi",uf.name+" ("+uf.role+")"));setUf({name:"",pass:"",role:"kullanici"});};
     const savePerms=(uid)=>{const u=D.users.find(x=>x.id===uid);setDb(p=>({...p,users:p.users.map(u=>u.id===uid?{...u,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:u)}),addLog("Yetki Güncellendi",u?u.name:"#"+uid));setEditUid(null);};
-    const selFirma=FL.find(f=>f.id===selFirmaId);
-    /* Firma CRUD */
+    /* Firma seç → yerel kopyasını al */
+    function selectFirma(id){
+      const f=FL.find(x=>x.id===id);
+      if(f){setSelFirmaId(id);setEf(JSON.parse(JSON.stringify(f)));}
+    }
+    /* Firma kartını kaydet */
+    function saveFirmaCard(){
+      if(!ef)return;
+      setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===ef.id?ef:f)}),addLog("Firma Kaydedildi",ef.ad));
+      alert(ef.ad+" kaydedildi!");
+    }
+    /* Firma ekle */
     function addFirma(){if(!firmaForm.kod||!firmaForm.ad)return alert("Firma kodu ve adı zorunlu!");setDb(p=>({...p,firmaList:[...(p.firmaList||[]),{...firmaForm,id:p.nextFirmaId||6,subeler:[],bolumler:[],gorevler:[]}],nextFirmaId:(p.nextFirmaId||6)+1}),addLog("Firma Eklendi",firmaForm.ad));setFirmaForm({kod:"",ad:"",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:""});}
-    function updateFirma(id,field,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===id?{...f,[field]:val}:f)}),addLog("Firma Güncellendi",field+": "+val));}
-    function delFirma(id){const f=FL.find(x=>x.id===id);if(!confirm(f?.ad+" silinsin mi?"))return;setDb(p=>({...p,firmaList:(p.firmaList||[]).filter(x=>x.id!==id)}),addLog("Firma Silindi",f?.ad));if(selFirmaId===id)setSelFirmaId(null);}
-    /* Şube CRUD */
-    function addSube(){if(!subeForm.ad||!selFirmaId)return alert("Şube adı zorunlu!");setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:[...(f.subeler||[]),{...subeForm,id:p.nextSubeId||6}]}:f),nextSubeId:(p.nextSubeId||6)+1}),addLog("Şube Eklendi",subeForm.ad));setSubeForm({ad:"",adres:"",telefon:"",eposta:""});}
-    function delSube(sid){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:(f.subeler||[]).filter(s=>s.id!==sid)}:f)}),addLog("Şube Silindi","#"+sid));}
-    function updateSube(sid,field,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,subeler:(f.subeler||[]).map(s=>s.id===sid?{...s,[field]:val}:s)}:f)}));}
-    /* Bölüm/Görev CRUD */
-    function addItem(type,val){if(!val||!selFirmaId)return;setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:[...(f[type]||[]),val]}:f)}),addLog(type==="bolumler"?"Bölüm Eklendi":"Görev Eklendi",val));}
-    function delItem(type,i){const old=(selFirma[type]||[])[i];setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).filter((_,idx)=>idx!==i)}:f)}),addLog(type==="bolumler"?"Bölüm Silindi":"Görev Silindi",old));}
-    function editItem(type,i,val){setDb(p=>({...p,firmaList:(p.firmaList||[]).map(f=>f.id===selFirmaId?{...f,[type]:(f[type]||[]).map((x,idx)=>idx===i?val:x)}:f)}));}
+    function delFirma(id){const f=FL.find(x=>x.id===id);if(!confirm(f?.ad+" silinsin mi?"))return;setDb(p=>({...p,firmaList:(p.firmaList||[]).filter(x=>x.id!==id)}),addLog("Firma Silindi",f?.ad));if(selFirmaId===id){setSelFirmaId(null);setEf(null);}}
+    /* Yerel firma düzenleme helpers */
+    const eff=(k,v)=>setEf({...ef,[k]:v});
+    /* Şube: yerel ekleme/silme/düzenleme */
+    function efAddSube(){if(!subeForm.ad)return alert("Şube adı zorunlu!");const nid=(ef.subeler||[]).reduce((m,s)=>Math.max(m,s.id||0),0)+1;setEf({...ef,subeler:[...(ef.subeler||[]),{...subeForm,id:nid}]});setSubeForm({ad:"",adres:"",telefon:"",eposta:""});}
+    function efDelSube(sid){setEf({...ef,subeler:(ef.subeler||[]).filter(s=>s.id!==sid)});}
+    function efUpdateSube(sid,field,val){setEf({...ef,subeler:(ef.subeler||[]).map(s=>s.id===sid?{...s,[field]:val}:s)});}
+    /* Bölüm/Görev: yerel ekleme/silme/düzenleme */
+    function efAddItem(type,val){if(!val)return;setEf({...ef,[type]:[...(ef[type]||[]),val]});}
+    function efDelItem(type,i){setEf({...ef,[type]:(ef[type]||[]).filter((_,idx)=>idx!==i)});}
+    function efEditItem(type,i,val){setEf({...ef,[type]:(ef[type]||[]).map((x,idx)=>idx===i?val:x)});}
 
     const ff=(k,v)=>setFirmaForm({...firmaForm,[k]:v});
     const sf=(k,v)=>setSubeForm({...subeForm,[k]:v});
@@ -1287,76 +1299,82 @@ function App(){
         </div>
         {/* Firma Listesi */}
         <table><thead><tr>{["KOD","FİRMA ADI","VERGİ NO","TELEFON","TÜR","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
-        <tbody>{FL.map(f=><tr key={f.id} style={{background:selFirmaId===f.id?"#eff6ff":"transparent",cursor:"pointer"}} onClick={()=>setSelFirmaId(f.id)}>
+        <tbody>{FL.map(f=><tr key={f.id} style={{background:selFirmaId===f.id?"#eff6ff":"transparent",cursor:"pointer"}} onClick={()=>selectFirma(f.id)}>
           <td style={{...tdS,fontWeight:700,color:C.teal}}>{f.kod}</td>
           <td style={{...tdS,fontWeight:600}}>{f.ad}</td>
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.vergiNo||"-"}</td>
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.telefon||"-"}</td>
           <td style={{...tdS,fontSize:12,color:C.sec}}>{f.firmaTuru||"-"}</td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
-            <button onClick={e=>{e.stopPropagation();setSelFirmaId(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
+            <button onClick={e=>{e.stopPropagation();selectFirma(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
             <button onClick={e=>{e.stopPropagation();delFirma(f.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>
           </span></td>
         </tr>)}</tbody></table>
         {FL.length===0&&<div style={{padding:20,textAlign:"center",color:C.mut}}>Henüz firma eklenmemiş</div>}
       </div>
       {/* SEÇİLİ FİRMA DETAY */}
-      {selFirma&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.teal,marginBottom:20}}>
-        <div style={{fontSize:16,fontWeight:700,color:C.teal,marginBottom:4}}>{selFirma.kod} — {selFirma.ad}</div>
-        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Firma detaylarını düzenleyin, şube/bölüm/görev ekleyin</div>
-        {/* Firma Bilgileri Düzenle */}
+      {ef&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.teal,marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div style={{fontSize:16,fontWeight:700,color:C.teal}}>{ef.kod} — {ef.ad}</div>
+          <div style={{display:"flex",gap:10}}>
+            <Btn bg={C.teal} onClick={saveFirmaCard}><IcSave/> Firma Kartını Kaydet</Btn>
+            <Btn bg="#6b7280" onClick={()=>{setSelFirmaId(null);setEf(null);}}><IcX/> Kapat</Btn>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Değişiklik yapın, bitince "Firma Kartını Kaydet" butonuna basın</div>
+        {/* Firma Bilgileri */}
         <div style={{display:"grid",gridTemplateColumns:"100px 1fr 1fr 120px",gap:10,marginBottom:10}}>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Kodu</div><input value={selFirma.kod||""} onChange={e=>updateFirma(selFirma.id,"kod",e.target.value.toUpperCase())} style={inpS}/></div>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Adı</div><input value={selFirma.ad||""} onChange={e=>updateFirma(selFirma.id,"ad",e.target.value)} style={inpS}/></div>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Merkez Adresi</div><input value={selFirma.adres||""} onChange={e=>updateFirma(selFirma.id,"adres",e.target.value)} style={inpS}/></div>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Türü</div><input value={selFirma.firmaTuru||""} onChange={e=>updateFirma(selFirma.id,"firmaTuru",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Kodu</div><input value={ef.kod||""} onChange={e=>eff("kod",e.target.value.toUpperCase())} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Adı</div><input value={ef.ad||""} onChange={e=>eff("ad",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Merkez Adresi</div><input value={ef.adres||""} onChange={e=>eff("adres",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Firma Türü</div><input value={ef.firmaTuru||""} onChange={e=>eff("firmaTuru",e.target.value)} style={inpS}/></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi No</div><input value={selFirma.vergiNo||""} onChange={e=>updateFirma(selFirma.id,"vergiNo",e.target.value)} style={inpS}/></div>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi Dairesi</div><input value={selFirma.vergiDairesi||""} onChange={e=>updateFirma(selFirma.id,"vergiDairesi",e.target.value)} style={inpS}/></div>
-          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Telefon</div><input value={selFirma.telefon||""} onChange={e=>updateFirma(selFirma.id,"telefon",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi No</div><input value={ef.vergiNo||""} onChange={e=>eff("vergiNo",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Vergi Dairesi</div><input value={ef.vergiDairesi||""} onChange={e=>eff("vergiDairesi",e.target.value)} style={inpS}/></div>
+          <div><div style={{fontSize:11,color:C.sec,marginBottom:3}}>Telefon</div><input value={ef.telefon||""} onChange={e=>eff("telefon",e.target.value)} style={inpS}/></div>
         </div>
         {/* ŞUBELER */}
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Şubeler ({(selFirma.subeler||[]).length})</div>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Şubeler ({(ef.subeler||[]).length})</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 80px",gap:8,marginBottom:10}}>
             <input value={subeForm.ad} onChange={e=>sf("ad",e.target.value)} placeholder="Şube Adı *" style={inpS}/>
             <input value={subeForm.adres} onChange={e=>sf("adres",e.target.value)} placeholder="Adres" style={inpS}/>
             <input value={subeForm.telefon} onChange={e=>sf("telefon",e.target.value)} placeholder="Telefon" style={inpS}/>
             <input value={subeForm.eposta} onChange={e=>sf("eposta",e.target.value)} placeholder="E-posta" style={inpS}/>
-            <Btn bg={C.teal} onClick={addSube} style={{fontSize:11,padding:"6px 12px",height:36}}>Ekle</Btn>
+            <Btn bg={C.teal} onClick={efAddSube} style={{fontSize:11,padding:"6px 12px",height:36}}>Ekle</Btn>
           </div>
-          {(selFirma.subeler||[]).length>0&&<table><thead><tr>{["ŞUBE","ADRES","TELEFON","E-POSTA","SİL"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
-          <tbody>{(selFirma.subeler||[]).map(s=><tr key={s.id}>
-            <td style={{...tdS,fontWeight:600}}><input value={s.ad} onChange={e=>updateSube(s.id,"ad",e.target.value)} style={{...inpS,border:"none",background:"transparent",fontWeight:600,padding:"4px 0"}}/></td>
-            <td style={tdS}><input value={s.adres||""} onChange={e=>updateSube(s.id,"adres",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
-            <td style={tdS}><input value={s.telefon||""} onChange={e=>updateSube(s.id,"telefon",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
-            <td style={tdS}><input value={s.eposta||""} onChange={e=>updateSube(s.id,"eposta",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
-            <td style={tdS}><button onClick={()=>delSube(s.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></td>
+          {(ef.subeler||[]).length>0&&<table><thead><tr>{["ŞUBE","ADRES","TELEFON","E-POSTA","SİL"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+          <tbody>{(ef.subeler||[]).map(s=><tr key={s.id}>
+            <td style={{...tdS,fontWeight:600}}><input value={s.ad} onChange={e=>efUpdateSube(s.id,"ad",e.target.value)} style={{...inpS,border:"none",background:"transparent",fontWeight:600,padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.adres||""} onChange={e=>efUpdateSube(s.id,"adres",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.telefon||""} onChange={e=>efUpdateSube(s.id,"telefon",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><input value={s.eposta||""} onChange={e=>efUpdateSube(s.id,"eposta",e.target.value)} style={{...inpS,border:"none",background:"transparent",padding:"4px 0"}}/></td>
+            <td style={tdS}><button onClick={()=>efDelSube(s.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button></td>
           </tr>)}</tbody></table>}
         </div>
         {/* BÖLÜMLER VE GÖREVLER */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
           <div>
-            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Bölümler ({(selFirma.bolumler||[]).length})</div>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Bölümler ({(ef.bolumler||[]).length})</div>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
-              <input value={bolVal} onChange={e=>setBolVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} placeholder="Bölüm ekle..." style={{...inpS,flex:1}}/>
-              <button onClick={()=>{if(bolVal.trim()){addItem("bolumler",bolVal.trim());setBolVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
+              <input value={bolVal} onChange={e=>setBolVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&bolVal.trim()){efAddItem("bolumler",bolVal.trim());setBolVal("");}}} placeholder="Bölüm ekle..." style={{...inpS,flex:1}}/>
+              <button onClick={()=>{if(bolVal.trim()){efAddItem("bolumler",bolVal.trim());setBolVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
             </div>
-            {(selFirma.bolumler||[]).map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
-              <input value={b} onChange={e=>editItem("bolumler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
-              <button onClick={()=>delItem("bolumler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
+            {(ef.bolumler||[]).map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
+              <input value={b} onChange={e=>efEditItem("bolumler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
+              <button onClick={()=>efDelItem("bolumler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
             </div>)}
           </div>
           <div>
-            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Görevler ({(selFirma.gorevler||[]).length})</div>
+            <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Görevler ({(ef.gorevler||[]).length})</div>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
-              <input value={gorVal} onChange={e=>setGorVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} placeholder="Görev ekle..." style={{...inpS,flex:1}}/>
-              <button onClick={()=>{if(gorVal.trim()){addItem("gorevler",gorVal.trim());setGorVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
+              <input value={gorVal} onChange={e=>setGorVal(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&gorVal.trim()){efAddItem("gorevler",gorVal.trim());setGorVal("");}}} placeholder="Görev ekle..." style={{...inpS,flex:1}}/>
+              <button onClick={()=>{if(gorVal.trim()){efAddItem("gorevler",gorVal.trim());setGorVal("");}}} style={{width:36,height:36,background:C.teal,border:"none",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><IcPlus/></button>
             </div>
-            {(selFirma.gorevler||[]).map((g,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
-              <input value={g} onChange={e=>editItem("gorevler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
-              <button onClick={()=>delItem("gorevler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
+            {(ef.gorevler||[]).map((g,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 0",borderBottom:"1px solid "+C.brdLt,fontSize:13}}>
+              <input value={g} onChange={e=>efEditItem("gorevler",i,e.target.value)} style={{border:"none",background:"transparent",fontSize:13,flex:1,padding:"2px 0",outline:"none"}}/>
+              <button onClick={()=>efDelItem("gorevler",i)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0}}><IcTrash/></button>
             </div>)}
           </div>
         </div>
@@ -1396,14 +1414,14 @@ function App(){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
             <div>
               <div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:8}}>Firmalar (boş = hepsine erişim)</div>
-              {D.firms.map(f=><label key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
+              {allFirms.map(f=><label key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
                 <input type="checkbox" checked={editFirmalar.includes(f)} onChange={e=>{if(e.target.checked)setEditFirmalar([...editFirmalar,f]);else setEditFirmalar(editFirmalar.filter(x=>x!==f));}} style={{width:"auto"}}/>
                 {f}
               </label>)}
             </div>
             <div>
               <div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:8}}>Şubeler (boş = hepsine erişim)</div>
-              {D.subs.map(s=><label key={s} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
+              {allSubs.map(s=><label key={s} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,cursor:"pointer"}}>
                 <input type="checkbox" checked={editSubeler.includes(s)} onChange={e=>{if(e.target.checked)setEditSubeler([...editSubeler,s]);else setEditSubeler(editSubeler.filter(x=>x!==s));}} style={{width:"auto"}}/>
                 {s}
               </label>)}
