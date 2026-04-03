@@ -105,7 +105,7 @@ const defaultDB={
     {id:4,name:"DURSUNALİ ERDEM",gorev:"Üretim Müdürü",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Baklava",maas:110000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2020-01-01",istenCikis:"",kidem:"2020-01-01",dogumGunu:"1985-05-15"},
   ],
   nextEmpId:5,
-  avanslar:[{id:1,date:"2026-03-20",empId:4,type:"Avans",amount:5000,note:""},{id:2,date:"2026-03-20",empId:4,type:"Maaş Haczi",amount:5000,note:""}],
+  avanslar:[{id:1,date:"2026-03-20",empId:4,type:"Avans",amount:5000,note:""},{id:2,date:"2026-03-20",empId:4,type:"Haciz+",amount:5000,note:""}],
   nextAvansId:3,
   holidays:[{id:1,n:"Yılbaşı (2026)",s:"2026-01-01",e:"2026-01-01"},{id:2,n:"Ulusal Egemenlik ve Çocuk B.",s:"2026-04-23",e:"2026-04-23"},{id:3,n:"Emek ve Dayanışma G.",s:"2026-05-01",e:"2026-05-01"},{id:4,n:"Atatürk'ü Anma, Gençlik B.",s:"2026-05-19",e:"2026-05-19"},{id:5,n:"Demokrasi ve Milli Birlik G.",s:"2026-07-15",e:"2026-07-15"},{id:6,n:"Zafer Bayramı",s:"2026-08-30",e:"2026-08-30"},{id:7,n:"Cumhuriyet Bayramı",s:"2026-10-29",e:"2026-10-29"},{id:8,n:"Ramazan Bayramı",s:"2026-03-20",e:"2026-03-22"},{id:9,n:"Kurban Bayramı",s:"2026-05-27",e:"2026-05-30"}],
   nextHolId:10,
@@ -381,9 +381,9 @@ function App(){
     /* Avansları dönem tarihine göre filtrele */
     const dStart=donemKey+"-01";const dEnd=donemKey+"-"+String(pDays).padStart(2,"0");
     const ea=D.avanslar.filter(a=>a.empId===emp.id&&a.date>=dStart&&a.date<=dEnd);
-    const a2=ea.filter(a=>a.type==="Avans").reduce((s,a)=>s+a.amount,0);
+    const a2=ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-").reduce((s,a)=>s+a.amount,0);
     const ur=ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0);
-    const ke=ea.filter(a=>a.type==="Maaş Haczi"||a.type==="İcra").reduce((s,a)=>s+a.amount,0);
+    const ke=ea.filter(a=>a.type==="Kıdem R-"||a.type==="İhbar R-"||a.type==="Haciz-"||a.type==="Borç R-").reduce((s,a)=>s+a.amount,0);
     const devirPlus=ea.filter(a=>a.type==="Devir+").reduce((s,a)=>s+a.amount,0);
     const devirMinus=ea.filter(a=>a.type==="Devir-").reduce((s,a)=>s+a.amount,0);
     const yatan=banka-bes-avans1-ke;
@@ -780,13 +780,14 @@ function App(){
   /* ÖDEME-TAHSİLAT */
   function AvansPage(){
     const [af,setAf]=useState({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});
-    const add=()=>{if(!af.empId||!af.amount)return alert("Personel ve Tutar zorunlu!");setDb(p=>({...p,avanslar:[...p.avanslar,{id:p.nextAvansId,date:af.date,empId:Number(af.empId),type:af.type,amount:Number(af.amount),note:af.note}],nextAvansId:p.nextAvansId+1}),addLog(af.type+" Eklendi",empName(Number(af.empId))+" → "+af.amount+" ₺"));setAf({...af,amount:"",note:""});};
-    function typeBadge(t){if(t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};return{bg:C.redBg,cl:C.red};}
+    const baFieldMap={"İhbar R+":"ihbarRP","İhbar R-":"ihbarRM","İhbar Gr+":"ihbarGP","İhbar Gr-":"ihbarGM","Kıdem R+":"kidemRP","Kıdem R-":"kidemRM","Kıdem Gr+":"kidemGP","Kıdem Gr-":"kidemGM","Haciz+":"hacizP","Haciz-":"hacizM","Borç R+":"borcRP","Borç R-":"borcRM","Borç Gr+":"borcGP","Borç Gr-":"borcGM"};
+    const add=()=>{if(!af.empId||!af.amount)return alert("Personel ve Tutar zorunlu!");const amt=Number(af.amount)||0;const eid=Number(af.empId);setDb(p=>{const next={...p,avanslar:[...p.avanslar,{id:p.nextAvansId,date:af.date,empId:eid,type:af.type,amount:amt,note:af.note}],nextAvansId:p.nextAvansId+1};/* Borç Alacak güncelle */const baKey=baFieldMap[af.type];if(baKey){const ba={...next.borcAlacak||{}};if(!ba[eid])ba[eid]={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};ba[eid]={...ba[eid],[baKey]:(ba[eid][baKey]||0)+amt};next.borcAlacak=ba;}return next;},addLog(af.type+" Eklendi",empName(eid)+" → "+amt+" ₺"));setAf({...af,amount:"",note:""});};
+    function typeBadge(t){if(t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};if(t.includes("İhbar"))return{bg:"#fef3c7",cl:"#b45309"};if(t.includes("Kıdem"))return{bg:"#dbeafe",cl:"#2563eb"};if(t.includes("Haciz"))return{bg:C.redBg,cl:C.red};if(t.includes("Borç"))return{bg:"#f3e8ff",cl:"#7c3aed"};return{bg:C.redBg,cl:C.red};}
     return <div><Header icon={<IcCard/>} title="Ödeme-Tahsilat" sub="Avans, Ürün, Devir ve kesinti işlemleri"/>
       {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
         <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
           <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel *</div><select value={af.empId} onChange={e=>setAf({...af,empId:e.target.value})}><option value="">Seçiniz...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans</option><option>Ürün</option><option>Maaş Haczi</option><option>İcra</option><option>Devir+</option><option>Devir-</option></select></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans</option><option>Ürün</option><option>İhbar R+</option><option>İhbar R-</option><option>İhbar Gr+</option><option>İhbar Gr-</option><option>Kıdem R+</option><option>Kıdem R-</option><option>Kıdem Gr+</option><option>Kıdem Gr-</option><option>Haciz+</option><option>Haciz-</option><option>Borç R+</option><option>Borç R-</option><option>Borç Gr+</option><option>Borç Gr-</option><option>Devir+</option><option>Devir-</option></select></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tutar *</div><input type="text" inputMode="decimal" value={af.amount} onChange={e=>setAf({...af,amount:e.target.value})}/></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tarih *</div><input type="date" value={af.date} onChange={e=>setAf({...af,date:e.target.value})}/></div>
           <Btn bg="#e11d48" onClick={add} style={{height:42}}>Ekle</Btn>
@@ -794,7 +795,7 @@ function App(){
         <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Açıklama</div><input value={af.note} onChange={e=>setAf({...af,note:e.target.value})} placeholder="İsteğe bağlı açıklama..."/></div>
       </div>}
       <div style={{background:"#eff6ff",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.blu}}>
-        <strong>Bordro Yansıması:</strong> Avans→AVANS2 (-) | Ürün→ÜRÜN (-) | Maaş Haczi/İcra→KES-EKL (-) | <strong style={{color:C.grn}}>Devir+</strong>→DEVİR (+) | <strong style={{color:"#be185d"}}>Devir-</strong>→DEVİR (-)
+        <strong>Bordro Yansıması:</strong> Avans/Kıdem Gr-/İhbar Gr-/Borç Gr-→AVANS2 (-) | Ürün→ÜRÜN (-) | Kıdem R-/İhbar R-/Haciz-/Borç R-→KES-EKL (-) | +Türler→Borç Alacak | <strong style={{color:C.grn}}>Devir+</strong>→DEVİR (+) | <strong style={{color:"#be185d"}}>Devir-</strong>→DEVİR (-)
       </div>
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
         <table><thead><tr>{["TARİH","PERSONEL","TÜR","TUTAR","AÇIKLAMA","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
@@ -1277,12 +1278,18 @@ function App(){
       return true;
     });
     const BA=D.borcAlacak||{};
-    function getBA(empId){return BA[empId]||{kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};}
+    function getBA(empId){return BA[empId]||{ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};}
     function setBA(empId,field,val){
       const n=Number(String(val).replace(/\./g,"").replace(",","."))||0;
-      setDb(p=>{const ba={...p.borcAlacak||{}};if(!ba[empId])ba[empId]={kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};ba[empId]={...ba[empId],[field]:n};return{...p,borcAlacak:ba};});
+      setDb(p=>{const ba={...p.borcAlacak||{}};if(!ba[empId])ba[empId]={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};ba[empId]={...ba[empId],[field]:n};return{...p,borcAlacak:ba};});
     }
     const cols=[
+      {h:"İhbar R+",k:"ihbarRP",type:"input"},
+      {h:"İhbar R-",k:"ihbarRM",type:"input"},
+      {h:"İhbar R Kalan",k:"_irk",type:"calc",calc:d=>(d.ihbarRP||0)-(d.ihbarRM||0)},
+      {h:"İhbar Gr+",k:"ihbarGP",type:"input"},
+      {h:"İhbar Gr-",k:"ihbarGM",type:"input"},
+      {h:"İhbar Gr Kalan",k:"_igk",type:"calc",calc:d=>(d.ihbarGP||0)-(d.ihbarGM||0)},
       {h:"Kıdem R+",k:"kidemRP",type:"input"},
       {h:"Kıdem R-",k:"kidemRM",type:"input"},
       {h:"Kıdem R Kalan",k:"_krk",type:"calc",calc:d=>(d.kidemRP||0)-(d.kidemRM||0)},
@@ -1299,9 +1306,9 @@ function App(){
       {h:"Borç Gr-",k:"borcGM",type:"input"},
       {h:"Borç Gr Kalan",k:"_bgk",type:"calc",calc:d=>(d.borcGP||0)-(d.borcGM||0)}
     ];
-    function kalanT(d){return(d.kidemRP||0)-(d.kidemRM||0)+(d.kidemGP||0)-(d.kidemGM||0)+(d.hacizP||0)-(d.hacizM||0)+(d.borcRP||0)-(d.borcRM||0)+(d.borcGP||0)-(d.borcGM||0);}
+    function kalanT(d){return(d.ihbarRP||0)-(d.ihbarRM||0)+(d.ihbarGP||0)-(d.ihbarGM||0)+(d.kidemRP||0)-(d.kidemRM||0)+(d.kidemGP||0)-(d.kidemGM||0)+(d.hacizP||0)-(d.hacizM||0)+(d.borcRP||0)-(d.borcRM||0)+(d.borcGP||0)-(d.borcGM||0);}
     /* Toplamlar */
-    const totals={kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};
+    const totals={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};
     baEmps.forEach(e=>{const d=getBA(e.id);Object.keys(totals).forEach(k=>{totals[k]+=(d[k]||0);});});
     const baTc={textAlign:"center",fontSize:11,padding:"4px 2px",whiteSpace:"nowrap"};
     const baIn={width:70,padding:"3px 4px",fontSize:11,textAlign:"right",border:"1px solid #e5e7eb",borderRadius:4,background:"#fefce8"};
@@ -1314,7 +1321,7 @@ function App(){
         onBlur={()=>{focused.current=false;setEditing(false);setBA(empId,field,txt);}}
         style={baIn}/>;
     }
-    function colBg(h){if(h.includes("Kıdem"))return"#eff6ff";if(h.includes("Haciz"))return"#fef2f2";if(h.includes("Borç"))return"#f5f3ff";return"#f8fafb";}
+    function colBg(h){if(h.includes("İhbar"))return"#fef3c7";if(h.includes("Kıdem"))return"#eff6ff";if(h.includes("Haciz"))return"#fef2f2";if(h.includes("Borç"))return"#f5f3ff";return"#f8fafb";}
     return <div>
       <Header icon={<IcWallet/>} title="Borç Alacak" sub="Kıdem, haciz ve borç takip tablosu"/>
       {/* SÜZME */}
