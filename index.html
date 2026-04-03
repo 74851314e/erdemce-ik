@@ -127,15 +127,40 @@ const defaultDB={
   kasaKupurler:[200,100,50,20,10,5],
 };
 
-/* VERİ DEPOLAMA — Sunucu üzerinden otomatik kayıt, tüm tarayıcılar aynı veriyi görür */
+/* VERİ DEPOLAMA — Çoklu kullanıcı desteği: akıllı birleştirme + otomatik senkronizasyon */
 let _saveTimer=null;
-function loadDB(){return defaultDB;} /* İlk yükleme — sunucudan veri useEffect ile gelecek */
-function saveDB(db){
-  /* Debounced: Her değişiklikte 300ms bekle, sonra sunucuya kaydet */
+let _saving=false;
+function loadDB(){return defaultDB;}
+
+/* Obje birleştirme: her anahtar için en güncel değeri al */
+function mergeDB(server,local,changedKeys){
+  const merged={...server};
+  changedKeys.forEach(k=>{
+    if(typeof local[k]==="object"&&local[k]!==null&&!Array.isArray(local[k])&&typeof server[k]==="object"&&server[k]!==null&&!Array.isArray(server[k])){
+      merged[k]={...server[k],...local[k]};
+    }else{
+      merged[k]=local[k];
+    }
+  });
+  return merged;
+}
+
+let _changedKeys=new Set();
+function saveDB(db,key){
+  if(key)_changedKeys.add(key);
   if(_saveTimer)clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(()=>{
-    fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db)}).catch(()=>{});
-  },300);
+  _saveTimer=setTimeout(async()=>{
+    if(_saving)return;
+    _saving=true;
+    try{
+      const res=await fetch("/api/data");
+      const server=await res.json();
+      const merged=_changedKeys.size>0?mergeDB(server,db,_changedKeys):{...server,...db};
+      await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(merged)});
+      _changedKeys.clear();
+    }catch(e){}
+    _saving=false;
+  },500);
 }
 
 /* EDITABLE LIST */
@@ -219,7 +244,36 @@ function App(){
     }).catch(()=>setLoading(false));
   },[]);
 
-  const setDb=(updater,logEntry)=>{setDbRaw(prev=>{const next=typeof updater==="function"?updater(prev):{...prev,...updater};if(logEntry&&curUser){const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,...logEntry};next.logs=[log,...(next.logs||[])].slice(0,500);}saveDB(next);return next;});};
+  /* Otomatik senkronizasyon — her 5 saniyede sunucudan güncelleme al */
+  const lastLocalChange=useRef(0);
+  useEffect(()=>{
+    const interval=setInterval(()=>{
+      if(_saving)return;
+      if(Date.now()-lastLocalChange.current<3000)return; /* Son değişiklikten 3sn geçmeden çekme */
+      fetch("/api/data").then(r=>r.json()).then(data=>{
+        if(data&&Object.keys(data).length>0){
+          setDbRaw(prev=>{
+            const merged={...defaultDB,...data};
+            return JSON.stringify(prev)!==JSON.stringify(merged)?merged:prev;
+          });
+        }
+      }).catch(()=>{});
+    },5000);
+    return()=>clearInterval(interval);
+  },[]);
+
+  const setDb=(updater,logEntry)=>{
+    lastLocalChange.current=Date.now();
+    setDbRaw(prev=>{
+      const next=typeof updater==="function"?updater(prev):{...prev,...updater};
+      if(logEntry&&curUser){const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,...logEntry};next.logs=[log,...(next.logs||[])].slice(0,500);}
+      /* Değişen anahtarları bul */
+      const changed=Object.keys(next).filter(k=>JSON.stringify(next[k])!==JSON.stringify(prev[k]));
+      changed.forEach(k=>_changedKeys.add(k));
+      saveDB(next);
+      return next;
+    });
+  };
   const addLog=(action,detail)=>({action,detail});
   const D=db;
   /* FirmaList → türetilmiş diziler */
