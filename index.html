@@ -99,10 +99,10 @@ const defaultDB={
   durumlar:["S","E","K","."],
   izinGunleri:["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","CP"],
   employees:[
-    {id:1,name:"AHMET ÇİMEN",gorev:"Usta",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Börek",maas:78000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2021-03-15",istenCikis:"",kidem:"2021-03-15",dogumGunu:"1990-08-20"},
-    {id:2,name:"ALİ ÇİMEN",gorev:"Kalfa",firma:"Mnl Gıda",sube:"Suadiye",bolum:"Çikolata",maas:38000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2022-06-01",istenCikis:"",kidem:"2022-06-01",dogumGunu:"1995-12-03"},
-    {id:3,name:"ALİ ESKİYAYLA",gorev:"Çırak",firma:"Mnl Gıda",sube:"Çekmeköy",bolum:"Hamur",maas:110000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2023-09-10",istenCikis:"",kidem:"2023-09-10",dogumGunu:"2000-03-25"},
-    {id:4,name:"DURSUNALİ ERDEM",gorev:"Üretim Müdürü",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Baklava",maas:110000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2020-01-01",istenCikis:"",kidem:"2020-01-01",dogumGunu:"1985-05-15"},
+    {id:1,name:"AHMET ÇİMEN",tc:"",gorev:"Usta",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Börek",maas:78000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2021-03-15",istenCikis:"",kidem:"2021-03-15",dogumGunu:"1990-08-20",cepTel:"",iban:""},
+    {id:2,name:"ALİ ÇİMEN",tc:"",gorev:"Kalfa",firma:"Mnl Gıda",sube:"Suadiye",bolum:"Çikolata",maas:38000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2022-06-01",istenCikis:"",kidem:"2022-06-01",dogumGunu:"1995-12-03",cepTel:"",iban:""},
+    {id:3,name:"ALİ ESKİYAYLA",tc:"",gorev:"Çırak",firma:"Mnl Gıda",sube:"Çekmeköy",bolum:"Hamur",maas:110000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2023-09-10",istenCikis:"",kidem:"2023-09-10",dogumGunu:"2000-03-25",cepTel:"",iban:""},
+    {id:4,name:"DURSUNALİ ERDEM",tc:"",gorev:"Üretim Müdürü",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Baklava",maas:110000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2020-01-01",istenCikis:"",kidem:"2020-01-01",dogumGunu:"1985-05-15",cepTel:"",iban:""},
   ],
   nextEmpId:5,
   avanslar:[{id:1,date:"2026-03-20",empId:4,type:"Avans",amount:5000,note:""},{id:2,date:"2026-03-20",empId:4,type:"Haciz+",amount:5000,note:""}],
@@ -339,6 +339,15 @@ function App(){
   },[allSubs,curUser]);
   const filteredSortedEmps=useMemo(()=>sortedEmps.filter(canAccessEmp),[sortedEmps,curUser]);
   const filteredActiveEmps=filteredSortedEmps.filter(e=>e.durum!=="K");
+  /* Dönem bazlı filtreleme: İşe giriş/çıkış tarihine göre */
+  function isEmpInPeriod(emp){
+    const pEnd=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(pDays).padStart(2,"0");
+    const pStart=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
+    if(emp.iseGiris&&emp.iseGiris>pEnd)return false;
+    if(emp.istenCikis&&emp.istenCikis<pStart)return false;
+    return true;
+  }
+  const periodActiveEmps=filteredActiveEmps.filter(isEmpInPeriod);
 
   /* PUANTAJ HELPERS — DİNAMİK DÖNEM */
   const now=new Date();
@@ -365,7 +374,7 @@ function App(){
   /* BORDRO */
   function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
   function isEmpKapali(emp){return isKapali(emp.firma,emp.sube);}
-  const bordroData=useMemo(()=>filteredActiveEmps.map(emp=>{
+  const bordroData=useMemo(()=>periodActiveEmps.map(emp=>{
     const ps=getPSummary(emp);
     const snapKey=bKey(emp.id);
     const snap=D.bordroSnapshot[snapKey];
@@ -393,7 +402,7 @@ function App(){
     const devir=(Number(D.bordroDevir[bKey(emp.id)])||0)+devirPlus-devirMinus;
     const kalan=elden+devir+a2+ur+odenen;
     return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,di:ps.di,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
-  }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.puantajDI,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
+  }),[periodActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.puantajDI,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
 
   /* BACKUP / RESTORE */
   async function handleBackup(){
@@ -613,7 +622,7 @@ function App(){
 
   /* PERSONEL */
   function PersonelPage(){
-    const empty={name:"",gorev:"",firma:"",sube:"",bolum:"",maas:0,yol:0,sabitAvans:0,izin:"Pazar",durum:"S",iseGiris:"",istenCikis:"",kidem:"",dogumGunu:""};
+    const empty={name:"",tc:"",gorev:"",firma:"",sube:"",bolum:"",maas:0,yol:0,sabitAvans:0,izin:"Pazar",durum:"S",iseGiris:"",istenCikis:"",kidem:"",dogumGunu:"",cepTel:"",iban:""};
     const [form,setForm]=useState(empty);const [editId,setEditId]=useState(null);const f=(k,v)=>setForm({...form,[k]:v});
     const csvRef=useRef();
     const [importResult,setImportResult]=useState(null);
@@ -651,8 +660,8 @@ function App(){
     const del=(id)=>{const emp=D.employees.find(e=>e.id===id);if(confirm("Personel silinsin mi?"))setDb(p=>({...p,employees:p.employees.filter(e=>e.id!==id)}),addLog("Personel Silindi",emp?emp.name:"#"+id));};
 
     function downloadTemplate(){
-      const header="Ad Soyad;Görev;Firma;Şube;Bölüm;Aylık Maaş;Yol;Sabit Avans;İzin Günü;Durum;İşe Giriş;Kıdem Tarihi;Doğum Günü;İşten Çıkış";
-      const sample="AHMET YILMAZ;Mühendis;Mnl Gıda;Sahrayıcedit;Baklava;15000;2000;5000;Pazar;S;2024-01-15;2024-01-15;1990-05-20;";
+      const header="Ad Soyad;TC Kimlik;Görev;Firma;Şube;Bölüm;Aylık Maaş;Yol;Sabit Avans;İzin Günü;Durum;İşe Giriş;Kıdem Tarihi;Doğum Günü;İşten Çıkış;Cep Telefonu;İBAN";
+      const sample="AHMET YILMAZ;12345678901;Mühendis;Mnl Gıda;Sahrayıcedit;Baklava;15000;2000;5000;Pazar;S;2024-01-15;2024-01-15;1990-05-20;;05XX XXX XX XX;TR...";
       const bom="\uFEFF";
       const blob=new Blob([bom+header+"\n"+sample+"\n"],{type:"text/csv;charset=utf-8"});
       const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="personel_sablon.csv";a.click();URL.revokeObjectURL(url);
@@ -668,7 +677,7 @@ function App(){
         const sep=lines[0].includes(";")?";":lines[0].includes("\t")?"\t":",";
         const headers=lines[0].split(sep).map(h=>h.trim().replace(/^["']|["']$/g,""));
         const hMap={};
-        const aliases={"ad soyad":"name","adsoyad":"name","ad":"name","isim":"name","görev":"gorev","gorev":"gorev","firma":"firma","şube":"sube","sube":"sube","bölüm":"bolum","bolum":"bolum","aylık maaş":"maas","aylik maas":"maas","maaş":"maas","maas":"maas","yol":"yol","sabit avans":"sabitAvans","avans":"sabitAvans","izin günü":"izin","izin gunu":"izin","izin":"izin","durum":"durum","işe giriş":"iseGiris","ise giris":"iseGiris","kıdem tarihi":"kidem","kidem tarihi":"kidem","kidem":"kidem","doğum günü":"dogumGunu","dogum gunu":"dogumGunu","işten çıkış":"istenCikis","isten cikis":"istenCikis"};
+        const aliases={"ad soyad":"name","adsoyad":"name","ad":"name","isim":"name","tc kimlik":"tc","tc":"tc","görev":"gorev","gorev":"gorev","firma":"firma","şube":"sube","sube":"sube","bölüm":"bolum","bolum":"bolum","aylık maaş":"maas","aylik maas":"maas","maaş":"maas","maas":"maas","yol":"yol","sabit avans":"sabitAvans","avans":"sabitAvans","izin günü":"izin","izin gunu":"izin","izin":"izin","durum":"durum","işe giriş":"iseGiris","ise giris":"iseGiris","kıdem tarihi":"kidem","kidem tarihi":"kidem","kidem":"kidem","doğum günü":"dogumGunu","dogum gunu":"dogumGunu","işten çıkış":"istenCikis","isten cikis":"istenCikis","cep telefonu":"cepTel","cep tel":"cepTel","telefon":"cepTel","iban":"iban","İban":"iban"};
         headers.forEach((h,i)=>{const key=aliases[h.toLowerCase()];if(key)hMap[key]=i;});
         if(hMap.name===undefined){alert("'Ad Soyad' sütunu bulunamadı! Şablonu indirip kullanın.");return;}
         const newEmps=[];let skipped=0;
@@ -680,7 +689,7 @@ function App(){
             maas:Number(String(cols[hMap.maas]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
             yol:Number(String(cols[hMap.yol]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
             sabitAvans:Number(String(cols[hMap.sabitAvans]||0).replace(/[.,]/g,m=>m===","?".":""))||0,
-            izin:cols[hMap.izin]||"Pazar",durum:cols[hMap.durum]||"S",iseGiris:cols[hMap.iseGiris]||"",istenCikis:cols[hMap.istenCikis]||"",kidem:cols[hMap.kidem]||"",dogumGunu:cols[hMap.dogumGunu]||""});
+            izin:cols[hMap.izin]||"Pazar",durum:cols[hMap.durum]||"S",iseGiris:cols[hMap.iseGiris]||"",istenCikis:cols[hMap.istenCikis]||"",kidem:cols[hMap.kidem]||"",dogumGunu:cols[hMap.dogumGunu]||"",tc:cols[hMap.tc]||"",cepTel:cols[hMap.cepTel]||"",iban:cols[hMap.iban]||""});
         }
         if(newEmps.length===0){alert("Geçerli kayıt bulunamadı!");return;}
         setDb(p=>{let nid=p.nextEmpId;const added=newEmps.map(emp=>({...emp,id:nid++}));return{...p,employees:[...p.employees,...added],nextEmpId:nid};},addLog("CSV İçe Aktarıldı",newEmps.length+" personel eklendi"));
@@ -695,6 +704,7 @@ function App(){
         <div style={{fontSize:16,fontWeight:700,marginBottom:20}}>{editId?"Personel Düzenle":"Yeni Personel Ekle"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>TC Kimlik No</div><input value={form.tc||""} onChange={e=>f("tc",e.target.value)} maxLength="11"/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{const v=e.target.value;setForm(prev=>({...prev,firma:v,sube:"",bolum:"",gorev:""}));}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):[]).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
@@ -714,6 +724,8 @@ function App(){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>Doğum Günü</div><input type="date" value={form.dogumGunu} onChange={e=>f("dogumGunu",e.target.value)}/></div>
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>İşten Çıkış Tarihi</div><input type="date" value={form.istenCikis} onChange={e=>f("istenCikis",e.target.value)}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Cep Telefonu</div><input value={form.cepTel||""} onChange={e=>f("cepTel",e.target.value)} placeholder="05XX XXX XX XX"/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>İBAN</div><input value={form.iban||""} onChange={e=>f("iban",e.target.value)} placeholder="TR..."/></div>
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn full bg={editId?C.blu:C.teal} onClick={save} style={{padding:14,fontSize:15,borderRadius:10}}>{editId?<><IcSave/> Güncelle</>:"Personeli Ekle"}</Btn>
@@ -755,7 +767,7 @@ function App(){
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}}>
         <table><thead><tr>
           {can("degistir")&&<th style={{...thS,width:36,textAlign:"center"}}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{width:"auto",cursor:"pointer"}}/></th>}
-          {["Ad Soyad","Görev","Firma","Şube","Maaş","İzin","Kıdem T.","D.Günü","Durum","İşlem"].map(h=><th key={h} style={thS}>{h}</th>)}
+          {["Ad Soyad","Görev","Firma","Şube","Maaş","İzin","Kıdem T.","D.Günü","Cep Tel","Durum","İşlem"].map(h=><th key={h} style={thS}>{h}</th>)}
         </tr></thead>
         <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":e.durum==="K"?"#f3e8ff":"transparent";return <tr key={e.id} style={{background:rBg}}>
           {can("degistir")&&<td style={{...tdS,textAlign:"center",width:36}}><input type="checkbox" checked={!!selected[e.id]} onChange={()=>toggleOne(e.id)} style={{width:"auto",cursor:"pointer"}}/></td>}
@@ -767,6 +779,7 @@ function App(){
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.izin}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.kidem||"-"}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.dogumGunu||"-"}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{e.cepTel||"-"}</td>
           <td style={tdS}><Badge text={e.durum} bg={e.durum==="S"?"#f3f4f6":e.durum==="E"?C.grnBg:e.durum==="K"?"#ede9fe":C.yelBg} color={e.durum==="S"?C.sec:e.durum==="E"?C.grn:e.durum==="K"?C.pur:"#a16207"}/></td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
             {can("degistir")&&<button onClick={()=>{setForm({...e});setEditId(e.id);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
@@ -940,7 +953,21 @@ function App(){
         </div>
         <div style={{flex:1}}/>
         <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
-        <BtnO><IcDl/> Excel İndir</BtnO>
+        <BtnO onClick={()=>{
+          const choice=prompt("Hangi döküm?\n1 = Avans\n2 = Yatan\n\nNumara girin:","1");
+          if(!choice||!["1","2"].includes(choice.trim()))return;
+          const isAvans=choice.trim()==="1";
+          const label=isAvans?"AVANS":"YATAN";
+          const bom="\uFEFF";
+          const header="İsim Soyisim;TC Kimlik;Banka Kodu;Şube Kodu;Hesap;İBAN;Tutar;Borç İzahat\n";
+          const rows=filtered.map(b=>{
+            const tutar=isAvans?b.avans1:b.yatan;
+            const izahat="MAAŞ+MESAİ-"+donemLabel+"-"+b.emp.name;
+            return b.emp.name+";"+(b.emp.tc||"")+";;;"+";"+(b.emp.iban||"")+";"+String(tutar).replace(".",",")+";"+izahat;
+          }).join("\n");
+          const blob=new Blob([bom+header+rows],{type:"text/csv;charset=utf-8"});
+          const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=label+"_"+donemLabel.replace(" ","_")+".csv";a.click();URL.revokeObjectURL(url);
+        }}><IcDl/> Avans / Yatan Excel</BtnO>
         {bFirma&&bSube&&!viewKapali&&<Btn bg={C.pur} onClick={handleKapat}><IcCheck/> Dönemi Kapat & Devret</Btn>}
       </div>
       {/* PRINT + SCREEN TITLE + PARA HESAPLAYICI */}
@@ -1142,7 +1169,7 @@ function App(){
       else if(code==="CLEAR"){setDb(p=>{const nc={...p.puantajCells};delete nc[key];const ns={...p.puantajSaat};delete ns[key];const nn={...p.puantajNotes};delete nn[key];return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};},addLog("Puantaj",eName+" Gün "+day+" → Temizlendi"));}
       else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
       setSelCell(null);}
-    const filtered=filteredSortedEmps.filter(emp=>{if(ptSearch&&!emp.name.toLowerCase().includes(ptSearch.toLowerCase()))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
+    const filtered=filteredSortedEmps.filter(emp=>{if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLowerCase().includes(ptSearch.toLowerCase()))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
     const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],[".","Ayrıldı","#991b1b"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
 
     function handleBulkApply(){
