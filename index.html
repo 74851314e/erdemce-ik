@@ -382,7 +382,7 @@ function App(){
     /* Avansları dönem tarihine göre filtrele */
     const dStart=donemKey+"-01";const dEnd=donemKey+"-"+String(pDays).padStart(2,"0");
     const ea=D.avanslar.filter(a=>a.empId===emp.id&&a.date>=dStart&&a.date<=dEnd);
-    const a2=-(ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>s+a.amount,0));
+    const a2=ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>a.type==="Maaş F+"?s+a.amount:s-a.amount,0);
     const ur=-(ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0));
     const ke=ea.filter(a=>a.type==="Kıdem R-"||a.type==="İhbar R-"||a.type==="Haciz-"||a.type==="Borç R-").reduce((s,a)=>s+a.amount,0);
     const devirPlus=ea.filter(a=>a.type==="Devir+").reduce((s,a)=>s+a.amount,0);
