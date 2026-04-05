@@ -391,7 +391,7 @@ function App(){
     const elden=maasT-banka;
     /* Devir: Bu dönem için kaydedilmiş devir (önceki dönemden aktarılan kalan) */
     const devir=(Number(D.bordroDevir[bKey(emp.id)])||0)+devirPlus-devirMinus;
-    const kalan=elden+devir-a2-ur-odenen;
+    const kalan=elden+devir+(-a2)+(-ur)+odenen;
     return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,di:ps.di,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
   }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.puantajDI,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
 
@@ -815,7 +815,7 @@ function App(){
     useEffect(()=>{if(!focused.current)setTxt(dbNum?String(dbNum).replace(".",","):"");},[dbVal]);
     function handleFocus(){focused.current=true;setEditing(true);setTxt(dbNum?String(dbNum).replace(".",","):"");}
     function handleBlur(){focused.current=false;setEditing(false);const n=toNum(txt);onSave(empId,field,n?String(n):"");}
-    function handleChange(e){const v=e.target.value.replace(/[^0-9,]/g,"");setTxt(v);}
+    function handleChange(e){const v=e.target.value.replace(/[^0-9,\-]/g,"");setTxt(v);}
     const display=editing?txt:(dbNum?fmt(dbNum):"");
     return <input type="text" inputMode="decimal" value={display} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} style={sx} placeholder="0" readOnly={disabled}/>;
   }
@@ -1050,7 +1050,7 @@ function App(){
       </div>
       {/* FORMÜL */}
       <div className="no-print" style={{background:"#f8fafc",borderRadius:8,padding:"12px 16px",marginTop:16,fontSize:11,color:C.sec,lineHeight:1.8}}>
-        <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük)+(Dİ×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir−Avans2−Ürün−Ödenen
+        <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük)+(Dİ×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir+Avans2+Ürün+Ödenen
       </div>
     </div>;
   }
