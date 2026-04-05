@@ -382,8 +382,8 @@ function App(){
     /* Avansları dönem tarihine göre filtrele */
     const dStart=donemKey+"-01";const dEnd=donemKey+"-"+String(pDays).padStart(2,"0");
     const ea=D.avanslar.filter(a=>a.empId===emp.id&&a.date>=dStart&&a.date<=dEnd);
-    const a2=ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>s+a.amount,0);
-    const ur=ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0);
+    const a2=-(ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>s+a.amount,0));
+    const ur=-(ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0));
     const ke=ea.filter(a=>a.type==="Kıdem R-"||a.type==="İhbar R-"||a.type==="Haciz-"||a.type==="Borç R-").reduce((s,a)=>s+a.amount,0);
     const devirPlus=ea.filter(a=>a.type==="Devir+").reduce((s,a)=>s+a.amount,0);
     const devirMinus=ea.filter(a=>a.type==="Devir-").reduce((s,a)=>s+a.amount,0);
@@ -391,7 +391,7 @@ function App(){
     const elden=maasT-banka;
     /* Devir: Bu dönem için kaydedilmiş devir (önceki dönemden aktarılan kalan) */
     const devir=(Number(D.bordroDevir[bKey(emp.id)])||0)+devirPlus-devirMinus;
-    const kalan=elden+devir+(-a2)+(-ur)+odenen;
+    const kalan=elden+devir+a2+ur+odenen;
     return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,di:ps.di,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
   }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.puantajDI,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
 
@@ -840,7 +840,7 @@ function App(){
       const w=window.open("","_blank");
       const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;padding:6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #999;padding:3px 4px;text-align:center;font-size:10px}th{background:#e8e8e8;font-weight:700;font-size:9px}td:first-child,th:first-child{text-align:left;white-space:nowrap}.hdr{text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #333}.hdr h3,.hdr h1,.hdr h2,.hdr h4{font-size:15px;margin-bottom:3px}.hdr h1{font-weight:800}.hdr h3{color:#555;font-weight:700}.hdr h2{color:#333;font-weight:700}.hdr h4{color:#666;font-weight:600}.re{background:#ecfdf5}.rd{background:#fefce8}.rk{background:#f3e8ff}.tot{background:#f0fdf4;font-weight:bold}.neg{color:#c00}.pos{color:#060}.blu{color:#2563eb}@page{size:landscape;margin:5mm}";
       const hd=cols;
-      let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td style='color:#991b1b;font-weight:800'>"+fe(tot.di)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fe(tot.a2)+"</td><td class='neg'>"+fn(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
+      let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td style='color:#991b1b;font-weight:800'>"+fe(tot.di)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fe(tot.a2)+"</td><td class='neg'>"+fe(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
       filtered.forEach(b=>{
         const m=D.bordroManual[bKey(b.emp.id)]||{};
         const rc=b.emp.durum==="E"?"re":b.emp.durum==="."?"rd":b.emp.durum==="K"?"rk":"";
@@ -865,8 +865,8 @@ function App(){
         rows+="<td class='neg'>"+(b.yatan!==0?fmt(b.yatan):"")+"</td>";
         rows+="<td class='pos'>"+fmt(b.elden)+"</td>";
         rows+="<td>"+(b.devir!==0?fmt(b.devir):"")+"</td>";
-        rows+="<td class='neg'>"+(b.a2>0?fmt(b.a2):"")+"</td>";
-        rows+="<td class='neg'>"+(b.ur>0?"-"+fmt(b.ur):"")+"</td>";
+        rows+="<td class='neg'>"+(b.a2!==0?fmt(b.a2):"")+"</td>";
+        rows+="<td class='neg'>"+(b.ur!==0?fmt(b.ur):"")+"</td>";
         rows+="<td>"+(Number(m.odenen)?fmt(Number(m.odenen)):"")+"</td>";
         rows+="<td><b>"+fmt(b.kalan)+"</b></td>";
         rows+="<td></td></tr>";
@@ -1006,7 +1006,7 @@ function App(){
               <td style={{...tc,color:C.grn}}>{fmt(tot.el)}</td>
               <td style={tc}>{fe(tot.dv)}</td>
               <td style={{...tc,color:C.red}}>{fe(tot.a2)}</td>
-              <td style={{...tc,color:C.red}}>{fn(tot.ur)}</td>
+              <td style={{...tc,color:C.red}}>{fe(tot.ur)}</td>
               <td style={tc}>{fe(tot.od)}</td>
               <td style={{...tc,fontWeight:800,background:C.yelBg}}>{fmt(tot.kl)}</td>
               <td style={tc}></td>
@@ -1039,8 +1039,8 @@ function App(){
               <td style={{...tc,color:C.red}}>{b.yatan!==0?fmt(b.yatan):""}</td>
               <td style={{...tc,color:C.grn}}>{fmt(b.elden)}</td>
               <td style={tc}>{b.devir!==0?fmt(b.devir):""}</td>
-              <td style={{...tc,color:C.red}}>{b.a2>0?fmt(b.a2):""}</td>
-              <td style={{...tc,color:C.red}}>{b.ur>0?"-"+fmt(b.ur):""}</td>
+              <td style={{...tc,color:C.red}}>{b.a2!==0?fmt(b.a2):""}</td>
+              <td style={{...tc,color:C.red}}>{b.ur!==0?fmt(b.ur):""}</td>
               <td style={{...tc,padding:"2px"}}><ManualInput empId={b.emp.id} field="odenen" dbVal={m.odenen} onSave={setManual} disabled={locked} style={mi}/></td>
               <td style={{...tc,fontWeight:700,background:C.yelBg}}>{fmt(b.kalan)}</td>
               <td style={{...tc,minWidth:60}}></td>
