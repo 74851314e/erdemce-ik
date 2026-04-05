@@ -374,7 +374,7 @@ function App(){
     const yol=kapali&&snap?Number(snap.yol):Number(emp.yol);
     const avans1=kapali&&snap?Number(snap.sabitAvans)||0:Number(emp.sabitAvans)||0;
     const gunlukUcret=maas/30;const saatUcreti=gunlukUcret/7.5;
-    const mesaiT=(ps.saat*saatUcreti)+(ps.mesai*gunlukUcret)+(ps.fm*gunlukUcret)+(ps.rt*gunlukUcret);
+    const mesaiT=(ps.saat*saatUcreti)+(ps.mesai*gunlukUcret)+(ps.fm*gunlukUcret)+(ps.rt*gunlukUcret)+(ps.di*gunlukUcret);
     const gunOrani=Math.min(ps.gun,30)/30;
     const maasT=(maas*gunOrani)+(yol*gunOrani)+mesaiT;
     const m=D.bordroManual[bKey(emp.id)]||{};
@@ -1050,7 +1050,7 @@ function App(){
       </div>
       {/* FORMÜL */}
       <div className="no-print" style={{background:"#f8fafc",borderRadius:8,padding:"12px 16px",marginTop:16,fontSize:11,color:C.sec,lineHeight:1.8}}>
-        <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir−Avans2−Ürün−Ödenen
+        <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük)+(Dİ×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir−Avans2−Ürün−Ödenen
       </div>
     </div>;
   }
