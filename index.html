@@ -114,6 +114,7 @@ const defaultDB={
   puantajCells:{},
   puantajSaat:{},
   puantajNotes:{},
+  puantajDI:{},
   users:[
     {id:1,name:"admin",pass:"123456",role:"admin",perms:{}},
     {id:2,name:"yonetici",pass:"123456",role:"yonetici",firmalar:[],subeler:[],perms:{dashboard:{gor:true,ekle:true,degistir:true,sil:true},puantaj:{gor:true,ekle:true,degistir:true,sil:true},personel:{gor:true,ekle:true,degistir:true,sil:true},avans:{gor:true,ekle:true,degistir:true,sil:true},bordro:{gor:true,ekle:true,degistir:false,sil:false},izin:{gor:true,ekle:true,degistir:true,sil:true},tatil:{gor:true,ekle:false,degistir:false,sil:false},ayarlar:{gor:false,ekle:false,degistir:false,sil:false}}},
@@ -359,7 +360,7 @@ function App(){
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
-  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=Math.max(0,30-ayr);return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr};}
+  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=Math.max(0,30-ayr);const di=Number(D.puantajDI[bKey(emp.id)])||0;return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr,di};}
 
   /* BORDRO */
   function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
@@ -391,8 +392,8 @@ function App(){
     /* Devir: Bu dönem için kaydedilmiş devir (önceki dönemden aktarılan kalan) */
     const devir=(Number(D.bordroDevir[bKey(emp.id)])||0)+devirPlus-devirMinus;
     const kalan=elden+devir-a2-ur-odenen;
-    return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
-  }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
+    return{emp,gun:ps.gun,saat:ps.saat,mesai:ps.mesai,fmVal:ps.fm,rtVal:ps.rt,di:ps.di,mesaiT,maas,yol,maasT,banka,bes,avans1,a2,ur,ke,yatan,elden,devir,odenen,kalan};
+  }),[filteredActiveEmps,D.avanslar,D.puantajCells,D.puantajSaat,D.puantajDI,D.bordroManual,D.bordroDevir,D.bordroSnapshot,D.bordroKapali,pYear,pMonth]);
 
   /* BACKUP / RESTORE */
   async function handleBackup(){
@@ -827,9 +828,9 @@ function App(){
     const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
     function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
     function hesaplaKupur(){const t=Number(String(kasaTutar).replace(/\./g,"").replace(",","."))||0;if(t<=0)return[];let kalan=t;return kasaKupurler.filter(k=>k>0).map(k=>{const adet=Math.floor(kalan/k);kalan=Math.round((kalan-adet*k)*100)/100;return{kupur:k,adet,toplam:adet*k};}).filter(x=>x.adet>0);}
-    const cols=["ADI SOYADI","D","İZİN GÜNÜ","MAAŞI","GÜN","YOL","SAAT","MESAİ","FM","RT","MESAİ T.","MAAŞ T.","BANKA","BES","AVANS1","KES-EKL","YATAN","ELDEN","DEVİR","AVANS2","ÜRÜN","ÖDENEN","KALAN","İMZA"];
+    const cols=["ADI SOYADI","D","İZİN GÜNÜ","MAAŞI","GÜN","YOL","SAAT","MESAİ","FM","RT","Dİ","MESAİ T.","MAAŞ T.","BANKA","BES","AVANS1","KES-EKL","YATAN","ELDEN","DEVİR","AVANS2","ÜRÜN","ÖDENEN","KALAN","İMZA"];
     const tc={textAlign:"center",fontSize:11,padding:"8px 4px",whiteSpace:"nowrap"};
-    const tot=filtered.reduce((t,b)=>({maas:t.maas+b.maas,gun:t.gun+b.gun,yol:t.yol+b.yol,saat:t.saat+b.saat,mesai:t.mesai+b.mesai,fm:t.fm+b.fmVal,rt:t.rt+b.rtVal,mesaiT:t.mesaiT+b.mesaiT,maasT:t.maasT+b.maasT,banka:t.banka+b.banka,bes:t.bes+b.bes,a1:t.a1+b.avans1,ke:t.ke+b.ke,yt:t.yt+b.yatan,el:t.el+b.elden,dv:t.dv+b.devir,a2:t.a2+b.a2,ur:t.ur+b.ur,od:t.od+b.odenen,kl:t.kl+b.kalan}),{maas:0,gun:0,yol:0,saat:0,mesai:0,fm:0,rt:0,mesaiT:0,maasT:0,banka:0,bes:0,a1:0,ke:0,yt:0,el:0,dv:0,a2:0,ur:0,od:0,kl:0});
+    const tot=filtered.reduce((t,b)=>({maas:t.maas+b.maas,gun:t.gun+b.gun,yol:t.yol+b.yol,saat:t.saat+b.saat,mesai:t.mesai+b.mesai,fm:t.fm+b.fmVal,rt:t.rt+b.rtVal,di:t.di+b.di,mesaiT:t.mesaiT+b.mesaiT,maasT:t.maasT+b.maasT,banka:t.banka+b.banka,bes:t.bes+b.bes,a1:t.a1+b.avans1,ke:t.ke+b.ke,yt:t.yt+b.yatan,el:t.el+b.elden,dv:t.dv+b.devir,a2:t.a2+b.a2,ur:t.ur+b.ur,od:t.od+b.odenen,kl:t.kl+b.kalan}),{maas:0,gun:0,yol:0,saat:0,mesai:0,fm:0,rt:0,di:0,mesaiT:0,maasT:0,banka:0,bes:0,a1:0,ke:0,yt:0,el:0,dv:0,a2:0,ur:0,od:0,kl:0});
     const fe=(v)=>v!==0?fmt(v):"";const fn=(v)=>v>0?"-"+fmt(v):"";
     function setManual(empId,field,val){const emp=D.employees.find(e=>e.id===empId);if(emp&&isEmpKapali(emp))return;const mk=bKey(empId);setDb(p=>{const m={...p.bordroManual};if(!m[mk])m[mk]={banka:"",bes:"",odenen:""};m[mk]={...m[mk],[field]:val};return{...p,bordroManual:m};},val?addLog("Bordro Düzenlendi",(emp?emp.name:"#"+empId)+" → "+field+": "+val):null);}
     function durumColor(emp){const d=emp.durum;if(d==="E")return"#ecfdf5";if(d===".")return"#fefce8";if(d==="K")return"#f3e8ff";return"transparent";}
@@ -839,7 +840,7 @@ function App(){
       const w=window.open("","_blank");
       const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;padding:6mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #999;padding:3px 4px;text-align:center;font-size:10px}th{background:#e8e8e8;font-weight:700;font-size:9px}td:first-child,th:first-child{text-align:left;white-space:nowrap}.hdr{text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #333}.hdr h3,.hdr h1,.hdr h2,.hdr h4{font-size:15px;margin-bottom:3px}.hdr h1{font-weight:800}.hdr h3{color:#555;font-weight:700}.hdr h2{color:#333;font-weight:700}.hdr h4{color:#666;font-weight:600}.re{background:#ecfdf5}.rd{background:#fefce8}.rk{background:#f3e8ff}.tot{background:#f0fdf4;font-weight:bold}.neg{color:#c00}.pos{color:#060}.blu{color:#2563eb}@page{size:landscape;margin:5mm}";
       const hd=cols;
-      let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fn(tot.a2)+"</td><td class='neg'>"+fn(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
+      let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td style='color:#991b1b;font-weight:800'>"+fe(tot.di)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fn(tot.a2)+"</td><td class='neg'>"+fn(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
       filtered.forEach(b=>{
         const m=D.bordroManual[bKey(b.emp.id)]||{};
         const rc=b.emp.durum==="E"?"re":b.emp.durum==="."?"rd":b.emp.durum==="K"?"rk":"";
@@ -854,6 +855,7 @@ function App(){
         rows+="<td"+(b.mesai>0?" class='pos'":b.mesai<0?" class='neg'":"")+">"+b.mesai+"</td>";
         rows+="<td>"+(b.fmVal||"-")+"</td>";
         rows+="<td class='blu'>"+(b.rtVal||"-")+"</td>";
+        rows+="<td style='color:#991b1b;font-weight:800'>"+(b.di||"-")+"</td>";
         rows+="<td>"+(b.mesaiT!==0?fmt(b.mesaiT):"0,00")+"</td>";
         rows+="<td><b>"+fmt(b.maasT)+"</b></td>";
         rows+="<td>"+(Number(m.banka)?fmt(Number(m.banka)):"")+"</td>";
@@ -993,6 +995,7 @@ function App(){
               <td style={tc}>{fe(tot.mesai)}</td>
               <td style={tc}>{fe(tot.fm)}</td>
               <td style={{...tc,color:C.blu}}>{fe(tot.rt)}</td>
+              <td style={{...tc,fontWeight:800,color:"#991b1b"}}>{fe(tot.di)}</td>
               <td style={tc}>{fe(tot.mesaiT)}</td>
               <td style={{...tc,fontWeight:800}}>{fmt(tot.maasT)}</td>
               <td style={{...tc,background:"#fef9c3"}}>{fe(tot.banka)}</td>
@@ -1026,6 +1029,7 @@ function App(){
               <td style={{...tc,color:b.mesai>0?"#16a34a":b.mesai<0?C.red:C.sec}}>{b.mesai}</td>
               <td style={tc}>{b.fmVal||"-"}</td>
               <td style={{...tc,color:C.blu}}>{b.rtVal||"-"}</td>
+              <td style={{...tc,fontWeight:800,color:"#991b1b"}}>{b.di||"-"}</td>
               <td style={tc}>{b.mesaiT!==0?fmt(b.mesaiT):"0,00"}</td>
               <td style={{...tc,fontWeight:600}}>{fmt(b.maasT)}</td>
               <td style={{...tc,padding:"2px"}}><ManualInput empId={b.emp.id} field="banka" dbVal={m.banka} onSave={setManual} disabled={locked} style={mi}/></td>
@@ -1098,7 +1102,7 @@ function App(){
       w.document.write("<div class='hdr'><h3>"+donem+"</h3><h1>PUANTAJ TABLOSU</h1><h2>"+firmaLabel+" — "+subeLabel+"</h2></div>");
       let th="<tr><th>PERSONEL</th><th>İZİN</th>";
       for(let i=1;i<=pDays;i++){const rtD=isHolidayDay(i);const dn=dayN[new Date(pYear,pMonth,i).getDay()];th+="<th style='background:"+(rtD?"#dbeafe;color:#2563eb":"#e8e8e8")+"'>"+i+"<br><span style=\"font-weight:400;font-size:7px\">"+dn+"</span></th>";}
-      th+="<th class='sm'>SA</th><th class='sm'>MS</th><th class='sm'>FM</th><th style='background:#dbeafe'>RT</th><th class='sm'>Yİ</th></tr>";
+      th+="<th class='sm'>SA</th><th class='sm'>MS</th><th class='sm'>FM</th><th style='background:#dbeafe'>RT</th><th class='sm'>Yİ</th><th style='background:#fef2f2;color:#991b1b'>Dİ</th></tr>";
       let rows="";
       filtered.forEach(emp=>{
         const sm=getPSummary(emp);
@@ -1121,7 +1125,8 @@ function App(){
         rows+="<td class='sm' style='font-weight:700;color:"+(sm.mesai>0?"#16a34a":sm.mesai<0?"#ef4444":"#6b7280")+"'>"+sm.mesai+"</td>";
         rows+="<td class='sm' style='font-weight:600'>"+(sm.fm||"-")+"</td>";
         rows+="<td style='background:#dbeafe;font-weight:700;color:"+(sm.rt>0?"#2563eb":"#6b7280")+"'>"+(sm.rt||"-")+"</td>";
-        rows+="<td class='sm' style='font-weight:600;color:"+(sm.yi>0?"#dc2626":"#6b7280")+"'>"+(sm.yi||"-")+"</td></tr>";
+        rows+="<td class='sm' style='font-weight:600;color:"+(sm.yi>0?"#dc2626":"#6b7280")+"'>"+(sm.yi||"-")+"</td>";
+        rows+="<td style='background:#fef2f2;font-weight:800;color:#991b1b'>"+(sm.di||"-")+"</td></tr>";
       });
       w.document.write("<table>"+th+rows+"</table></body></html>");
       w.document.close();setTimeout(()=>w.print(),400);
@@ -1238,7 +1243,7 @@ function App(){
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:1400}}><thead><tr>
           <th style={{...thS,position:"sticky",left:0,zIndex:3,minWidth:150,background:"#f8fafb"}}>PERSONEL</th><th style={{...thS,minWidth:80}}>FİRMA</th><th style={{...thS,textAlign:"center",minWidth:70}}>İZİN GÜNÜ</th>
           {Array.from({length:pDays},(_,i)=>{const d=i+1;const rtDay=isHolidayDay(d);const locked=!canEditDay(d);return <th key={i} style={{...thS,textAlign:"center",minWidth:30,padding:"4px 1px",background:rtDay?"#dbeafe":locked?"#f1f1f1":"#f8fafb",color:rtDay?"#2563eb":locked?"#bbb":C.sec}}><div style={{fontSize:10}}>{d}</div><div style={{fontSize:8,fontWeight:400}}>{dayA[i]}</div></th>;})}
-          <th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:35}}>SAAT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:45}}>MESAİ</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:30}}>FM</th><th style={{...thS,textAlign:"center",background:"#dbeafe",minWidth:30}}>RT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:25}}>Yİ</th>
+          <th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:35}}>SAAT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:45}}>MESAİ</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:30}}>FM</th><th style={{...thS,textAlign:"center",background:"#dbeafe",minWidth:30}}>RT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:25}}>Yİ</th><th style={{...thS,textAlign:"center",background:"#fef2f2",minWidth:35}}>Dİ</th>
         </tr></thead><tbody>
           {filtered.map(emp=>{const sm=getPSummary(emp);
             const rowBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"transparent";
@@ -1262,6 +1267,7 @@ function App(){
               <td style={{textAlign:"center",fontSize:12,fontWeight:600,background:C.yelBg,padding:"8px 4px"}}>{sm.fm||"-"}</td>
               <td style={{textAlign:"center",fontSize:12,fontWeight:700,background:"#dbeafe",padding:"8px 4px",color:sm.rt>0?"#2563eb":C.sec}}>{sm.rt||"-"}</td>
               <td style={{textAlign:"center",fontSize:12,fontWeight:600,background:C.yelBg,padding:"8px 4px",color:sm.yi>0?"#dc2626":C.sec}}>{sm.yi||"-"}</td>
+              <td style={{textAlign:"center",background:"#fef2f2",padding:"2px"}}><input type="number" value={D.puantajDI[bKey(emp.id)]||""} onChange={e=>{const v=e.target.value;setDb(p=>({...p,puantajDI:{...p.puantajDI,[bKey(emp.id)]:v?Number(v):""}}));}} style={{width:35,padding:"2px",fontSize:12,fontWeight:800,color:"#991b1b",textAlign:"center",border:"1px solid #fecaca",borderRadius:4,background:"transparent"}}/></td>
             </tr>;})}
         </tbody></table>
       </div>
