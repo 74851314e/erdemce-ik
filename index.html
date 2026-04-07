@@ -622,7 +622,7 @@ function App(){
 
   /* PERSONEL */
   function PersonelPage(){
-    const empty={name:"",tc:"",gorev:"",firma:"",sube:"",bolum:"",maas:0,yol:0,sabitAvans:0,izin:"Pazar",durum:"S",iseGiris:"",istenCikis:"",kidem:"",dogumGunu:"",cepTel:"",iban:""};
+    const empty={name:"",tc:"",gorev:"",firma:"",sube:"",bolum:"",maas:0,yol:0,sabitAvans:0,izin:"Pazar",durum:"S",iseGiris:"",istenCikis:"",kidem:"",dogumGunu:"",cepTel:"",iban:"",foto:""};
     const [form,setForm]=useState(empty);const [editId,setEditId]=useState(null);const f=(k,v)=>setForm({...form,[k]:v});
     const csvRef=useRef();
     const [importResult,setImportResult]=useState(null);
@@ -726,6 +726,15 @@ function App(){
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>İşten Çıkış Tarihi</div><input type="date" value={form.istenCikis} onChange={e=>f("istenCikis",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Cep Telefonu</div><input value={form.cepTel||""} onChange={e=>f("cepTel",e.target.value)} placeholder="05XX XXX XX XX"/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>İBAN</div><input value={form.iban||""} onChange={e=>f("iban",e.target.value)} placeholder="TR..."/></div>
+        </div>
+        <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
+          {form.foto?<img src={form.foto} alt="" style={{width:60,height:80,borderRadius:8,objectFit:"cover",border:"1.5px solid "+C.brd}}/>:<div style={{width:60,height:80,borderRadius:8,background:C.brdLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:C.mut,border:"1.5px dashed "+C.brd,textAlign:"center"}}>Foto<br/>Yok</div>}
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel Fotoğrafı</div>
+            <div style={{display:"flex",gap:8}}>
+              <input type="file" accept="image/*" onChange={e=>{const file=e.target.files[0];if(!file)return;if(file.size>2000000){alert("Fotoğraf 2MB'dan küçük olmalı!");return;}const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const cnv=document.createElement("canvas");const tw=300,th=400;cnv.width=tw;cnv.height=th;const ctx=cnv.getContext("2d");/* Cover-fit center crop */const srcRatio=img.width/img.height;const dstRatio=tw/th;let sx,sy,sw,sh;if(srcRatio>dstRatio){sh=img.height;sw=sh*dstRatio;sx=(img.width-sw)/2;sy=0;}else{sw=img.width;sh=sw/dstRatio;sx=0;sy=(img.height-sh)/2;}ctx.drawImage(img,sx,sy,sw,sh,0,0,tw,th);f("foto",cnv.toDataURL("image/jpeg",0.85));};img.src=ev.target.result;};r.readAsDataURL(file);e.target.value="";}} style={{flex:1,padding:"6px 10px"}}/>
+              {form.foto&&<button onClick={()=>f("foto","")} type="button" style={{padding:"6px 12px",background:C.red,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:12}}>Kaldır</button>}
+            </div>
+          </div>
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn full bg={editId?C.blu:C.teal} onClick={save} style={{padding:14,fontSize:15,borderRadius:10}}>{editId?<><IcSave/> Güncelle</>:"Personeli Ekle"}</Btn>
@@ -1119,6 +1128,7 @@ function App(){
 
   /* PUANTAJ */
   function PuantajPage(){
+    const [hoverFoto,setHoverFoto]=useState(null);
     const donem=donemLabel;
     const firmaLabel=ptF||"Tüm Firmalar";const subeLabel=ptS||"Tüm Şubeler";
     function toggleDurum(d){setPtDs(prev=>prev.includes(d)?prev.filter(x=>x!==d):[...prev,d]);}
@@ -1277,7 +1287,7 @@ function App(){
             const rowBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"transparent";
             const stickyBg=rowBg==="transparent"?"#fff":rowBg;
             return <tr key={emp.id} style={{borderBottom:"1px solid "+C.brdLt,background:rowBg}}>
-              <td style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.name}</td>
+              <td onMouseEnter={e=>{if(emp.foto)setHoverFoto({foto:emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{emp.name}</td>
               <td style={{...tdS,color:C.sec,fontSize:12}}>{emp.firma}</td>
               <td style={{...tdS,color:C.sec,fontSize:12,textAlign:"center"}}>{emp.izin}</td>
               {Array.from({length:pDays},(_,di)=>{const day=di+1;const code=getCellCode(emp.id,day);const izin=isIzinDay(emp,day);const isRT=isHolidayDay(day);const cs=codeStyle(code);
@@ -1299,6 +1309,7 @@ function App(){
             </tr>;})}
         </tbody></table>
       </div>
+      {hoverFoto&&<div style={{position:"fixed",left:hoverFoto.x,top:hoverFoto.y,width:150,height:180,borderRadius:8,border:"2px solid "+C.teal,boxShadow:"0 6px 20px rgba(0,0,0,.35)",zIndex:200,pointerEvents:"none",overflow:"hidden",background:"#fff"}}><img src={hoverFoto.foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
     </div>;
   }
 
