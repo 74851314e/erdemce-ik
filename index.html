@@ -844,6 +844,7 @@ function App(){
 
   /* BORDRO */
   function BordroPage(){
+    const [hoverFoto,setHoverFoto]=useState(null);
     const bSearchRef=useRef();
     const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLowerCase().includes(bSearch.toLowerCase()))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
@@ -1056,7 +1057,7 @@ function App(){
               const locked=isEmpKapali(b.emp);
               const mi={...minI,background:locked?"#f3f4f6":"#fefce8"};
               return <tr key={b.emp.id} className={rowCls} style={{borderBottom:"1px solid "+C.brdLt,background:locked?"#f9fafb":rc}}>
-              <td style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.name}</td>
+              <td onMouseEnter={e=>{if(b.emp.foto)setHoverFoto({foto:b.emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(b.emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{b.emp.name}</td>
               <td style={{...tc,padding:"4px 2px"}}><span style={{display:"inline-block",padding:"2px 6px",borderRadius:4,background:db.bg,color:db.cl,fontSize:10,fontWeight:700}}>{b.emp.durum}</span></td>
               <td style={{...tc,color:C.sec}}>{b.emp.izin}</td>
               <td style={tc}>{fmt(b.maas)}</td>
@@ -1089,6 +1090,7 @@ function App(){
       <div className="no-print" style={{background:"#f8fafc",borderRadius:8,padding:"12px 16px",marginTop:16,fontSize:11,color:C.sec,lineHeight:1.8}}>
         <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük)+(Dİ×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir+Avans2+Ürün+Ödenen
       </div>
+      {hoverFoto&&<div style={{position:"fixed",left:hoverFoto.x,top:hoverFoto.y,width:150,height:180,borderRadius:8,border:"2px solid "+C.teal,boxShadow:"0 6px 20px rgba(0,0,0,.35)",zIndex:200,pointerEvents:"none",overflow:"hidden",background:"#fff"}}><img src={hoverFoto.foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
     </div>;
   }
 
