@@ -229,6 +229,17 @@ function App(){
   const [db,setDbRaw]=useState(loadDB);
   const [loading,setLoading]=useState(true);
   const [curUser,setCurUser]=useState(null);
+  const [hassasMap,setHassasMap]=useState({});
+  const [hassasLoaded,setHassasLoaded]=useState(false);
+  function hassasHeaders(){return curUser?{"X-Auth-User":curUser.name,"X-Auth-Pass":curUser.pass,"Content-Type":"application/json"}:{};}
+  function loadHassas(){
+    if(!curUser||curUser.role!=="admin")return;
+    fetch("/api/hassas",{headers:hassasHeaders()}).then(r=>r.ok?r.json():{}).then(m=>{setHassasMap(m||{});setHassasLoaded(true);}).catch(()=>setHassasLoaded(true));
+  }
+  function saveHassasItem(empId,tc,iban){
+    if(!curUser||curUser.role!=="admin")return Promise.reject("Yetki yok");
+    return fetch("/api/hassas",{method:"POST",headers:hassasHeaders(),body:JSON.stringify({empId:String(empId),tc:tc||"",iban:iban||""})}).then(r=>{if(!r.ok)throw new Error("Sheets kayit hatasi");setHassasMap(p=>({...p,[String(empId)]:{tc:tc||"",iban:iban||""}}));return true;});
+  }
   const [page,setPage]=useState("dashboard");
   const [sideOpen,setSideOpen]=useState(true);
   /* GLOBAL FILTER STATES - persist across re-renders */
@@ -302,6 +313,7 @@ function App(){
   useEffect(()=>{
     if(curUser&&!prevUserRef.current){
       setDbRaw(prev=>{const log={id:Date.now(),ts:new Date().toISOString(),user:curUser.name,role:curUser.role,action:"Giriş Yapıldı",detail:"Sisteme giriş yapıldı"};const next={...prev,logs:[log,...(prev.logs||[])].slice(0,500)};saveDB(next);return next;});
+      if(curUser.role==="admin")loadHassas();
     }
     prevUserRef.current=curUser;
   },[curUser]);
@@ -655,10 +667,18 @@ function App(){
     }
 
     const save=()=>{if(!form.name.trim())return alert("Ad Soyad zorunlu!");
-      if(editId){setDb(p=>({...p,employees:p.employees.map(e=>e.id===editId?{...form,id:editId,maas:Number(form.maas),yol:Number(form.yol),sabitAvans:Number(form.sabitAvans)}:e)}),addLog("Personel Güncellendi",form.name));setEditId(null);}
-      else{setDb(p=>({...p,employees:[...p.employees,{...form,id:p.nextEmpId,maas:Number(form.maas),yol:Number(form.yol),sabitAvans:Number(form.sabitAvans)}],nextEmpId:p.nextEmpId+1}),addLog("Personel Eklendi",form.name));}
+      const isAdmin=curUser&&curUser.role==="admin";
+      const tcVal=form.tc||"";const ibanVal=form.iban||"";
+      const cleanForm={...form};delete cleanForm.tc;delete cleanForm.iban;
+      let savedId=editId;
+      if(editId){setDb(p=>({...p,employees:p.employees.map(e=>e.id===editId?{...cleanForm,id:editId,maas:Number(cleanForm.maas),yol:Number(cleanForm.yol),sabitAvans:Number(cleanForm.sabitAvans)}:e)}),addLog("Personel Güncellendi",form.name));setEditId(null);}
+      else{setDb(p=>{savedId=p.nextEmpId;return{...p,employees:[...p.employees,{...cleanForm,id:p.nextEmpId,maas:Number(cleanForm.maas),yol:Number(cleanForm.yol),sabitAvans:Number(cleanForm.sabitAvans)}],nextEmpId:p.nextEmpId+1};},addLog("Personel Eklendi",form.name));}
+      if(isAdmin&&savedId&&(tcVal||ibanVal)){
+        setTimeout(()=>{saveHassasItem(savedId,tcVal,ibanVal).catch(e=>alert("Hassas veri Sheets'e kaydedilemedi: "+e.message));},100);
+      }
       setForm(empty);};
     const del=(id)=>{const emp=D.employees.find(e=>e.id===id);if(confirm("Personel silinsin mi?"))setDb(p=>({...p,employees:p.employees.filter(e=>e.id!==id)}),addLog("Personel Silindi",emp?emp.name:"#"+id));};
+    const loadEmpEdit=(e)=>{const h=hassasMap[String(e.id)]||{tc:"",iban:""};setForm({...e,tc:h.tc,iban:h.iban});setEditId(e.id);window.scrollTo({top:0,behavior:"smooth"});};
 
     function downloadTemplate(){
       const header="Ad Soyad;TC Kimlik;Görev;Firma;Şube;Bölüm;Aylık Maaş;Yol;Sabit Avans;İzin Günü;Durum;İşe Giriş;Kıdem Tarihi;Doğum Günü;İşten Çıkış;Cep Telefonu;İBAN";
@@ -705,7 +725,7 @@ function App(){
         <div style={{fontSize:16,fontWeight:700,marginBottom:20}}>{editId?"Personel Düzenle":"Yeni Personel Ekle"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:14,marginBottom:14}}>
           <div><div style={{fontSize:12,fontWeight:600,color:C.teal,marginBottom:4}}>Ad Soyad *</div><input value={form.name} onChange={e=>f("name",e.target.value)}/></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>TC Kimlik No</div><input value={form.tc||""} onChange={e=>f("tc",e.target.value)} maxLength="11"/></div>
+          {curUser&&curUser.role==="admin"?<div><div style={{fontSize:12,fontWeight:600,color:"#991b1b",marginBottom:4}}>🔒 TC Kimlik No</div><input value={form.tc||""} onChange={e=>f("tc",e.target.value)} maxLength="11" placeholder="Google Sheets'te saklanır"/></div>:<div></div>}
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Firma</div><select value={form.firma} onChange={e=>{const v=e.target.value;setForm(prev=>({...prev,firma:v,sube:"",bolum:"",gorev:""}));}}><option value="">Seç...</option>{userFirms.map(x=><option key={x}>{x}</option>)}</select></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Şube</div><select value={form.sube} onChange={e=>f("sube",e.target.value)}><option value="">Seç...</option>{(form.firma?getFirmaSubs(form.firma):[]).map(x=><option key={x}>{x}</option>)}</select></div>
         </div>
@@ -726,7 +746,7 @@ function App(){
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>Doğum Günü</div><input type="date" value={form.dogumGunu} onChange={e=>f("dogumGunu",e.target.value)}/></div>
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4,textTransform:"uppercase"}}>İşten Çıkış Tarihi</div><input type="date" value={form.istenCikis} onChange={e=>f("istenCikis",e.target.value)}/></div>
           <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Cep Telefonu</div><input value={form.cepTel||""} onChange={e=>f("cepTel",e.target.value)} placeholder="05XX XXX XX XX"/></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>İBAN</div><input value={form.iban||""} onChange={e=>f("iban",e.target.value)} placeholder="TR..."/></div>
+          {curUser&&curUser.role==="admin"?<div><div style={{fontSize:12,fontWeight:600,color:"#991b1b",marginBottom:4}}>🔒 İBAN</div><input value={form.iban||""} onChange={e=>f("iban",e.target.value)} placeholder="TR... (Sheets'te saklanır)"/></div>:<div></div>}
         </div>
         <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
           {form.foto?<img src={form.foto} alt="" style={{width:60,height:80,borderRadius:8,objectFit:"cover",border:"1.5px solid "+C.brd}}/>:<div style={{width:60,height:80,borderRadius:8,background:C.brdLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:C.mut,border:"1.5px dashed "+C.brd,textAlign:"center"}}>Foto<br/>Yok</div>}
@@ -746,6 +766,16 @@ function App(){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div style={{fontSize:16,fontWeight:700}}>Personel Listesi ({filteredEmps.length}/{filteredSortedEmps.length})</div>
         {can("ekle")&&<div style={{display:"flex",gap:10}}>
+          {curUser&&curUser.role==="admin"&&<BtnO onClick={()=>{
+            const items=D.employees.filter(e=>e.tc||e.iban).map(e=>({empId:String(e.id),tc:e.tc||"",iban:e.iban||""}));
+            if(items.length===0)return alert("Aktarılacak TC/İBAN bulunamadı.");
+            if(!confirm(items.length+" personelin TC/İBAN bilgisi Google Sheets'e aktarılacak ve uygulamadan silinecek. Devam?"))return;
+            fetch("/api/hassas/batch",{method:"POST",headers:hassasHeaders(),body:JSON.stringify({items})}).then(r=>r.ok?r.json():Promise.reject("Sheets hatası")).then(()=>{
+              setDb(p=>({...p,employees:p.employees.map(e=>{const c={...e};delete c.tc;delete c.iban;return c;})}),addLog("Hassas Veri Aktarıldı",items.length+" personel Sheets'e taşındı"));
+              loadHassas();
+              alert(items.length+" kayıt başarıyla Sheets'e aktarıldı ve uygulamadan silindi.");
+            }).catch(e=>alert("Hata: "+e));
+          }} style={{background:"#fef2f2",borderColor:"#991b1b",color:"#991b1b"}}>🔒 Sheets'e Aktar</BtnO>}
           <BtnO onClick={downloadTemplate}><IcDl/> Şablon İndir (CSV)</BtnO>
           <Btn bg={C.blu} onClick={()=>csvRef.current?.click()} style={{fontSize:13}}><IcUl/> CSV Yükle</Btn>
           <input ref={csvRef} type="file" accept=".csv,.txt,.xls,.xlsx" onChange={handleCSVUpload} style={{display:"none"}}/>
@@ -779,7 +809,7 @@ function App(){
           {can("degistir")&&<th style={{...thS,width:36,textAlign:"center"}}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{width:"auto",cursor:"pointer"}}/></th>}
           {["Ad Soyad","Görev","Firma","Şube","Maaş","İzin","Kıdem T.","D.Günü","Cep Tel","Durum","İşlem"].map(h=><th key={h} style={thS}>{h}</th>)}
         </tr></thead>
-        <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":e.durum==="K"?"#f3e8ff":"transparent";return <tr key={e.id} onDoubleClick={()=>{if(can("degistir")){setForm({...e});setEditId(e.id);window.scrollTo({top:0,behavior:"smooth"});}}} style={{background:rBg,cursor:can("degistir")?"pointer":"default"}}>
+        <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":e.durum==="K"?"#f3e8ff":"transparent";return <tr key={e.id} onDoubleClick={()=>{if(can("degistir"))loadEmpEdit(e);}} style={{background:rBg,cursor:can("degistir")?"pointer":"default"}}>
           {can("degistir")&&<td style={{...tdS,textAlign:"center",width:36}}><input type="checkbox" checked={!!selected[e.id]} onChange={()=>toggleOne(e.id)} style={{width:"auto",cursor:"pointer"}}/></td>}
           <td style={{...tdS,fontWeight:600}}>{e.name}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.gorev}</td>
@@ -792,7 +822,7 @@ function App(){
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.cepTel||"-"}</td>
           <td style={tdS}><Badge text={e.durum} bg={e.durum==="S"?"#f3f4f6":e.durum==="E"?C.grnBg:e.durum==="K"?"#ede9fe":C.yelBg} color={e.durum==="S"?C.sec:e.durum==="E"?C.grn:e.durum==="K"?C.pur:"#a16207"}/></td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
-            {can("degistir")&&<button onClick={()=>{setForm({...e});setEditId(e.id);window.scrollTo({top:0,behavior:"smooth"});}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+            {can("degistir")&&<button onClick={()=>loadEmpEdit(e)} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
             {can("sil")&&<button onClick={()=>del(e.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
           </span></td>
         </tr>;})}</tbody></table>
@@ -999,17 +1029,22 @@ function App(){
         <select value={bKalanF} onChange={e=>setBKalanF(e.target.value)} style={{width:160}}><option value="">Kalan: Tümü</option><option value="ust">|Kalan| &gt; 50 ₺</option><option value="alt">|Kalan| ≤ 50 ₺</option></select>
         <div style={{flex:1}}/>
         <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
-        <BtnO onClick={()=>{
+        <BtnO onClick={async()=>{
+          if(!curUser||curUser.role!=="admin")return alert("TC/İBAN dökümü için admin yetkisi gerekir.");
           const choice=prompt("Hangi döküm?\n1 = Avans\n2 = Yatan\n\nNumara girin:","1");
           if(!choice||!["1","2"].includes(choice.trim()))return;
           const isAvans=choice.trim()==="1";
           const label=isAvans?"AVANS":"YATAN";
+          let hmap={};
+          try{const r=await fetch("/api/hassas",{headers:hassasHeaders()});if(!r.ok)throw new Error("Sheets erişim hatası ("+r.status+")");hmap=await r.json();}
+          catch(e){return alert("Hassas veriler çekilemedi: "+e.message);}
           const bom="\uFEFF";
           const header="İsim Soyisim;TC Kimlik;Banka Kodu;Şube Kodu;Hesap;İBAN;Tutar;Borç İzahat\n";
           const rows=filtered.map(b=>{
+            const h=hmap[String(b.emp.id)]||{tc:"",iban:""};
             const tutar=isAvans?b.avans1:b.yatan;
             const izahat="MAAŞ+MESAİ-"+donemLabel+"-"+b.emp.name;
-            return b.emp.name+";"+(b.emp.tc||"")+";;;"+";"+(b.emp.iban||"")+";"+String(tutar).replace(".",",")+";"+izahat;
+            return b.emp.name+";"+(h.tc||"")+";;;"+";"+(h.iban||"")+";"+String(tutar).replace(".",",")+";"+izahat;
           }).join("\n");
           const blob=new Blob([bom+header+rows],{type:"text/csv;charset=utf-8"});
           const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=label+"_"+donemLabel.replace(" ","_")+".csv";a.click();URL.revokeObjectURL(url);
