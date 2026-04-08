@@ -632,8 +632,9 @@ function App(){
     const [bulkVal,setBulkVal]=useState("");
     const [showBulk,setShowBulk]=useState(false);
 
+    const pSearchRef=useRef();
     const filteredEmps=filteredSortedEmps.filter(e=>{
-      if(pSearch&&!e.name.toLowerCase().includes(pSearch.toLowerCase()))return false;
+      if(pSearch&&!e.name.toLocaleLowerCase("tr").includes(pSearch.toLocaleLowerCase("tr")))return false;
       if(pFirma&&e.firma!==pFirma)return false;
       if(pSube&&e.sube!==pSube)return false;
       return true;
@@ -756,11 +757,11 @@ function App(){
       {/* SÜZME */}
       <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
         <IcFilter/>
-        <input placeholder="Personel Ara..." value={pSearch} onChange={e=>setPSearch(e.target.value)} style={{width:180}}/>
+        <input ref={pSearchRef} placeholder="Personel Ara..." defaultValue={pSearch} onKeyDown={e=>{if(e.key==="Enter")setPSearch(e.target.value);}} onBlur={e=>setPSearch(e.target.value)} style={{width:180}}/>
         <select value={pFirma} onChange={e=>{setPFirma(e.target.value);setPSube("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(x=><option key={x} value={x}>{x}</option>)}</select>
         <select value={pSube} onChange={e=>setPSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(pFirma?getFirmaSubs(pFirma):userSubs).map(x=><option key={x} value={x}>{x}</option>)}</select>
         <div style={{flex:1}}/>
-        <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+        <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");if(pSearchRef.current)pSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
       {/* TOPLU GÜNCELLEME */}
       {can("degistir")&&<div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,border:"1px solid "+(selCount>0?C.blu:C.cardBrd),display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
@@ -803,26 +804,60 @@ function App(){
   /* ÖDEME-TAHSİLAT */
   function AvansPage(){
     const [af,setAf]=useState({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});
+    const [editId,setEditId]=useState(null);
+    const [avSearch,setAvSearch]=useState("");
+    const [avEmp,setAvEmp]=useState("");
     const baFieldMap={"İhbar R+":"ihbarRP","İhbar R-":"ihbarRM","İhbar Gr+":"ihbarGP","İhbar Gr-":"ihbarGM","Kıdem R+":"kidemRP","Kıdem R-":"kidemRM","Kıdem Gr+":"kidemGP","Kıdem Gr-":"kidemGM","Haciz+":"hacizP","Haciz-":"hacizM","Borç R+":"borcRP","Borç R-":"borcRM","Borç Gr+":"borcGP","Borç Gr-":"borcGM","Maaş F+":"borcGP","Maaş F-":"borcGM"};
-    const add=()=>{if(!af.empId||!af.amount)return alert("Personel ve Tutar zorunlu!");const amt=Number(af.amount)||0;const eid=Number(af.empId);setDb(p=>{const next={...p,avanslar:[...p.avanslar,{id:p.nextAvansId,date:af.date,empId:eid,type:af.type,amount:amt,note:af.note}],nextAvansId:p.nextAvansId+1};/* Borç Alacak güncelle */const baKey=baFieldMap[af.type];if(baKey){const ba={...next.borcAlacak||{}};if(!ba[eid])ba[eid]={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};ba[eid]={...ba[eid],[baKey]:(ba[eid][baKey]||0)+amt};next.borcAlacak=ba;}return next;},addLog(af.type+" Eklendi",empName(eid)+" → "+amt+" ₺"));setAf({...af,amount:"",note:""});};
+    function parseAmount(v){const s=String(v||"").trim();if(!s)return 0;if(s.includes(","))return Number(s.replace(/\./g,"").replace(",","."))||0;return Number(s)||0;}
+    function applyBA(ba,eid,type,delta){const baKey=baFieldMap[type];if(!baKey)return ba;const newBa={...ba};if(!newBa[eid])newBa[eid]={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};newBa[eid]={...newBa[eid],[baKey]:(newBa[eid][baKey]||0)+delta};return newBa;}
+    const save=()=>{if(!af.empId||!af.amount)return alert("Personel ve Tutar zorunlu!");const amt=parseAmount(af.amount);if(amt===0)return alert("Geçerli tutar girin!");const eid=Number(af.empId);
+      if(editId){
+        const old=D.avanslar.find(a=>a.id===editId);
+        setDb(p=>{let ba=p.borcAlacak||{};if(old)ba=applyBA(ba,old.empId,old.type,-old.amount);ba=applyBA(ba,eid,af.type,amt);return{...p,avanslar:p.avanslar.map(a=>a.id===editId?{...a,date:af.date,empId:eid,type:af.type,amount:amt,note:af.note}:a),borcAlacak:ba};},addLog(af.type+" Güncellendi",empName(eid)+" → "+amt+" ₺"));
+        setEditId(null);
+      }else{
+        setDb(p=>({...p,avanslar:[...p.avanslar,{id:p.nextAvansId,date:af.date,empId:eid,type:af.type,amount:amt,note:af.note}],nextAvansId:p.nextAvansId+1,borcAlacak:applyBA(p.borcAlacak||{},eid,af.type,amt)}),addLog(af.type+" Eklendi",empName(eid)+" → "+amt+" ₺"));
+      }
+      setAf({empId:"",type:af.type,amount:"",date:af.date,note:""});
+    };
+    const del=(id)=>{const a=D.avanslar.find(x=>x.id===id);if(!a||!confirm("Silinsin mi?"))return;setDb(p=>({...p,avanslar:p.avanslar.filter(x=>x.id!==id),borcAlacak:applyBA(p.borcAlacak||{},a.empId,a.type,-a.amount)}),addLog(a.type+" Silindi",empName(a.empId)+" → "+fmt(a.amount)+" ₺"));};
+    const loadEdit=(a)=>{setAf({empId:String(a.empId),type:a.type,amount:String(a.amount).replace(".",","),date:a.date,note:a.note||""});setEditId(a.id);window.scrollTo({top:0,behavior:"smooth"});};
+    const loadCopy=(a)=>{setAf({empId:String(a.empId),type:a.type,amount:String(a.amount).replace(".",","),date:new Date().toISOString().slice(0,10),note:a.note||""});setEditId(null);window.scrollTo({top:0,behavior:"smooth"});};
     function typeBadge(t){if(t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};if(t.includes("Maaş F"))return{bg:"#fef3c7",cl:"#92400e"};if(t.includes("İhbar"))return{bg:"#fef3c7",cl:"#b45309"};if(t.includes("Kıdem"))return{bg:"#dbeafe",cl:"#2563eb"};if(t.includes("Haciz"))return{bg:C.redBg,cl:C.red};if(t.includes("Borç"))return{bg:"#f3e8ff",cl:"#7c3aed"};return{bg:C.redBg,cl:C.red};}
+    const filteredAvanslar=D.avanslar.filter(a=>{if(!filteredSortedEmps.some(e=>e.id===a.empId))return false;if(avEmp&&a.empId!==Number(avEmp))return false;if(avSearch){const s=avSearch.toLocaleLowerCase("tr");const n=(a.note||"").toLocaleLowerCase("tr");const en=empName(a.empId).toLocaleLowerCase("tr");if(!n.includes(s)&&!en.includes(s))return false;}return true;}).sort((a,b)=>b.date.localeCompare(a.date));
     return <div><Header icon={<IcCard/>} title="Ödeme-Tahsilat" sub="Avans, Ürün, Devir ve kesinti işlemleri"/>
-      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+(editId?C.blu:C.cardBrd),marginBottom:20}}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:14,color:editId?C.blu:C.txt}}>{editId?"İşlem Düzenle":"Yeni İşlem Ekle"}</div>
         <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
           <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel *</div><select value={af.empId} onChange={e=>setAf({...af,empId:e.target.value})}><option value="">Seçiniz...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans</option><option>Ürün</option><option>İhbar R+</option><option>İhbar R-</option><option>İhbar Gr+</option><option>İhbar Gr-</option><option>Kıdem R+</option><option>Kıdem R-</option><option>Kıdem Gr+</option><option>Kıdem Gr-</option><option>Haciz+</option><option>Haciz-</option><option>Borç R+</option><option>Borç R-</option><option>Borç Gr+</option><option>Borç Gr-</option><option>Maaş F+</option><option>Maaş F-</option><option>Devir+</option><option>Devir-</option></select></div>
-          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tutar *</div><input type="text" inputMode="decimal" value={af.amount} onChange={e=>setAf({...af,amount:e.target.value})}/></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tutar *</div><input type="text" inputMode="decimal" value={af.amount} onChange={e=>setAf({...af,amount:e.target.value.replace(/[^0-9,.]/g,"")})}/></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tarih *</div><input type="date" value={af.date} onChange={e=>setAf({...af,date:e.target.value})}/></div>
-          <Btn bg="#e11d48" onClick={add} style={{height:42}}>Ekle</Btn>
+          <Btn bg={editId?C.blu:"#e11d48"} onClick={save} style={{height:42}}>{editId?<><IcSave/> Güncelle</>:"Ekle"}</Btn>
+          {editId&&<Btn bg="#6b7280" onClick={()=>{setEditId(null);setAf({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});}} style={{height:42}}><IcX/> İptal</Btn>}
         </div>
         <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Açıklama</div><input value={af.note} onChange={e=>setAf({...af,note:e.target.value})} placeholder="İsteğe bağlı açıklama..."/></div>
       </div>}
       <div style={{background:"#eff6ff",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.blu}}>
         <strong>Bordro Yansıması:</strong> Avans/Kıdem Gr-/İhbar Gr-/Borç Gr-/Maaş F+→AVANS2 | Ürün→ÜRÜN | Kıdem R-/İhbar R-/Haciz-/Borç R-→KES-EKL | Maaş F-→Borç Alacak | +Türler→Borç Alacak | <strong style={{color:C.grn}}>Devir+</strong>→DEVİR (+) | <strong style={{color:"#be185d"}}>Devir-</strong>→DEVİR (-)
       </div>
+      {/* SÜZME */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/>
+        <input placeholder="Ara (Personel / Açıklama)..." value={avSearch} onChange={e=>setAvSearch(e.target.value)} style={{width:220}}/>
+        <select value={avEmp} onChange={e=>setAvEmp(e.target.value)} style={{width:200}}><option value="">Tüm Personeller</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:12,color:C.sec}}>{filteredAvanslar.length} kayıt</span>
+        <span onClick={()=>{setAvSearch("");setAvEmp("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+      </div>
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
         <table><thead><tr>{["TARİH","PERSONEL","TÜR","TUTAR","AÇIKLAMA","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
-        <tbody>{D.avanslar.filter(a=>filteredSortedEmps.some(e=>e.id===a.empId)).map(a=>{const tb=typeBadge(a.type);return <tr key={a.id}><td style={tdS}>{a.date}</td><td style={{...tdS,fontWeight:600}}>{empName(a.empId)}</td><td style={tdS}><Badge text={a.type} bg={tb.bg} color={tb.cl}/></td><td style={{...tdS,fontWeight:600}}>{fmt(a.amount)}</td><td style={{...tdS,color:C.mut}}>{a.note||"-"}</td><td style={tdS}>{can("sil")&&<button onClick={()=>setDb(p=>({...p,avanslar:p.avanslar.filter(x=>x.id!==a.id)}),addLog(a.type+" Silindi",empName(a.empId)+" → "+fmt(a.amount)+" ₺"))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}</td></tr>;})}</tbody></table>
+        <tbody>{filteredAvanslar.map(a=>{const tb=typeBadge(a.type);return <tr key={a.id} style={{background:editId===a.id?"#dbeafe":"transparent"}}><td style={tdS}>{a.date}</td><td style={{...tdS,fontWeight:600}}>{empName(a.empId)}</td><td style={tdS}><Badge text={a.type} bg={tb.bg} color={tb.cl}/></td><td style={{...tdS,fontWeight:600}}>{fmt(a.amount)}</td><td style={{...tdS,color:C.mut}}>{a.note||"-"}</td><td style={tdS}><span style={{display:"inline-flex",gap:8}}>
+          {can("degistir")&&<button onClick={()=>loadEdit(a)} title="Düzenle" style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+          {can("ekle")&&<button onClick={()=>loadCopy(a)} title="Kopyala" style={{background:"none",border:"none",cursor:"pointer",color:C.teal,fontSize:14}}>📋</button>}
+          {can("sil")&&<button onClick={()=>del(a.id)} title="Sil" style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
+        </span></td></tr>;})}</tbody></table>
+        {filteredAvanslar.length===0&&<div style={{padding:24,textAlign:"center",color:C.mut}}>Kayıt bulunamadı</div>}
       </div>
     </div>;
   }
@@ -846,7 +881,7 @@ function App(){
   function BordroPage(){
     const [hoverFoto,setHoverFoto]=useState(null);
     const bSearchRef=useRef();
-    const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLowerCase().includes(bSearch.toLowerCase()))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
+    const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
     const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
     function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
@@ -1017,7 +1052,7 @@ function App(){
         <span style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:16,height:12,borderRadius:3,background:"#f3e8ff",border:"1px solid #e9d5ff"}}></span> K</span>
       </div>
       {/* TABLE */}
-      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}} className="bordro-print">
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto",maxHeight:"calc(100vh - 320px)"}} className="bordro-print">
         <table style={{minWidth:1800}}>
           <thead><tr>{cols.map(h=><th key={h} style={{...thS,textAlign:h==="ADI SOYADI"?"left":"center",minWidth:h==="ADI SOYADI"?140:h==="İMZA"?60:h==="D"?30:h==="MESAİ T."||h==="MAAŞ T."?80:h==="BANKA"||h==="BES"||h==="ÖDENEN"?70:55,fontSize:10,whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
           <tbody>
@@ -1097,20 +1132,48 @@ function App(){
   /* İZİN */
   function IzinPage(){
     const [lf,setLf]=useState({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});
-    const add=()=>{if(!lf.empId||!lf.start||!lf.end)return alert("Personel ve tarihler zorunlu!");const d1=new Date(lf.start),d2=new Date(lf.end);const days=Math.max(1,Math.round((d2-d1)/86400000)+1);setDb(p=>({...p,leaves:[...p.leaves,{id:p.nextLeaveId,...lf,empId:Number(lf.empId),days}],nextLeaveId:p.nextLeaveId+1}),addLog("İzin Eklendi",empName(Number(lf.empId))+" → "+lf.type+" ("+lf.start+" - "+lf.end+")"));setLf({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});};
+    const [editId,setEditId]=useState(null);
+    const save=()=>{if(!lf.empId||!lf.start||!lf.end)return alert("Personel ve tarihler zorunlu!");const d1=new Date(lf.start),d2=new Date(lf.end);const days=Math.max(1,Math.round((d2-d1)/86400000)+1);
+      if(editId){
+        setDb(p=>({...p,leaves:p.leaves.map(l=>l.id===editId?{...l,...lf,empId:Number(lf.empId),days}:l)}),addLog("İzin Güncellendi",empName(Number(lf.empId))+" → "+lf.type+" ("+lf.start+" - "+lf.end+")"));
+        setEditId(null);
+      }else{
+        setDb(p=>({...p,leaves:[...p.leaves,{id:p.nextLeaveId,...lf,empId:Number(lf.empId),days}],nextLeaveId:p.nextLeaveId+1}),addLog("İzin Eklendi",empName(Number(lf.empId))+" → "+lf.type+" ("+lf.start+" - "+lf.end+")"));
+      }
+      setLf({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});
+    };
+    const loadEdit=(l)=>{setLf({empId:String(l.empId),type:l.type,start:l.start,end:l.end,note:l.note||"",approver:l.approver||""});setEditId(l.id);window.scrollTo({top:0,behavior:"smooth"});};
+    const loadCopy=(l)=>{setLf({empId:String(l.empId),type:l.type,start:"",end:"",note:l.note||"",approver:l.approver||""});setEditId(null);window.scrollTo({top:0,behavior:"smooth"});};
     return <div><Header icon={<IcDoc/>} title="İzin Formları" sub="Mazeret ve yıllık izin kayıtları"/>
-      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+C.cardBrd,marginBottom:20}}>
+      {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+(editId?C.blu:C.cardBrd),marginBottom:20}}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:14,color:editId?C.blu:C.txt}}>{editId?"İzin Düzenle":"Yeni İzin Ekle"}</div>
         <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
-          <div style={{flex:2}}><select value={lf.empId} onChange={e=>setLf({...lf,empId:e.target.value})}><option value="">Personel...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div style={{flex:1}}><select value={lf.type} onChange={e=>setLf({...lf,type:e.target.value})}><option>Mİ</option><option>Yİ</option><option>H</option><option>R</option></select></div>
-          <Btn onClick={add} style={{height:42}}>Kaydet</Btn>
+          <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel *</div><select value={lf.empId} onChange={e=>setLf({...lf,empId:e.target.value})}><option value="">Personel...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={lf.type} onChange={e=>setLf({...lf,type:e.target.value})}><option>Mİ</option><option>Yİ</option><option>H</option><option>R</option></select></div>
+          <Btn bg={editId?C.blu:C.teal} onClick={save} style={{height:42}}>{editId?<><IcSave/> Güncelle</>:"Kaydet"}</Btn>
+          {editId&&<Btn bg="#6b7280" onClick={()=>{setEditId(null);setLf({empId:"",type:"Mİ",start:"",end:"",note:"",approver:""});}} style={{height:42}}><IcX/> İptal</Btn>}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}><input type="date" value={lf.start} onChange={e=>setLf({...lf,start:e.target.value})}/><input type="date" value={lf.end} onChange={e=>setLf({...lf,end:e.target.value})}/><input placeholder="İzin Nedeni" value={lf.note} onChange={e=>setLf({...lf,note:e.target.value})}/></div>
-        <input placeholder="Onaylayan Yönetici" value={lf.approver} onChange={e=>setLf({...lf,approver:e.target.value})}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:14}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Başlangıç</div><input type="date" value={lf.start} onChange={e=>setLf({...lf,start:e.target.value})}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Bitiş</div><input type="date" value={lf.end} onChange={e=>setLf({...lf,end:e.target.value})}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Onaylayan Yönetici</div><select value={lf.approver} onChange={e=>setLf({...lf,approver:e.target.value})}><option value="">Seçiniz...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</select></div>
+        </div>
+        <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>İzin Nedeni</div><input placeholder="Açıklama..." value={lf.note} onChange={e=>setLf({...lf,note:e.target.value})}/></div>
       </div>}
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"hidden"}}>
-        <table><thead><tr>{["PERSONEL","TÜR","TARİH ARALIĞI","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
-        <tbody>{D.leaves.filter(l=>filteredSortedEmps.some(e=>e.id===l.empId)).map(l=><tr key={l.id}><td style={{...tdS,fontWeight:600}}>{empName(l.empId)}</td><td style={tdS}><Badge text={l.type} bg={C.grnBg} color={C.grn}/></td><td style={{...tdS,color:C.sec}}>{l.start} - {l.end} ({l.days} Gün)</td><td style={tdS}>{can("sil")&&<button onClick={()=>setDb(p=>({...p,leaves:p.leaves.filter(x=>x.id!==l.id)}),addLog("İzin Silindi",empName(l.empId)+" → "+l.type+" ("+l.start+" - "+l.end+")"))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}</td></tr>)}</tbody></table>
+        <table><thead><tr>{["PERSONEL","TÜR","TARİH ARALIĞI","NEDEN","ONAYLAYAN","İŞLEM"].map(h=><th key={h} style={thS}>{h}</th>)}</tr></thead>
+        <tbody>{D.leaves.filter(l=>filteredSortedEmps.some(e=>e.id===l.empId)).sort((a,b)=>b.start.localeCompare(a.start)).map(l=><tr key={l.id} style={{background:editId===l.id?"#dbeafe":"transparent"}}>
+          <td style={{...tdS,fontWeight:600}}>{empName(l.empId)}</td>
+          <td style={tdS}><Badge text={l.type} bg={C.grnBg} color={C.grn}/></td>
+          <td style={{...tdS,color:C.sec}}>{l.start} - {l.end} ({l.days} Gün)</td>
+          <td style={{...tdS,color:C.mut,fontSize:12}}>{l.note||"-"}</td>
+          <td style={{...tdS,color:C.sec,fontSize:12}}>{l.approver||"-"}</td>
+          <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
+            {can("degistir")&&<button onClick={()=>loadEdit(l)} title="Düzenle" style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+            {can("ekle")&&<button onClick={()=>loadCopy(l)} title="Kopyala" style={{background:"none",border:"none",cursor:"pointer",color:C.teal,fontSize:14}}>📋</button>}
+            {can("sil")&&<button onClick={()=>setDb(p=>({...p,leaves:p.leaves.filter(x=>x.id!==l.id)}),addLog("İzin Silindi",empName(l.empId)+" → "+l.type+" ("+l.start+" - "+l.end+")"))} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
+          </span></td>
+        </tr>)}</tbody></table>
       </div>
     </div>;
   }
@@ -1182,7 +1245,7 @@ function App(){
       else if(code==="CLEAR"){setDb(p=>{const nc={...p.puantajCells};delete nc[key];const ns={...p.puantajSaat};delete ns[key];const nn={...p.puantajNotes};delete nn[key];return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};},addLog("Puantaj",eName+" Gün "+day+" → Temizlendi"));}
       else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
       setSelCell(null);}
-    const filtered=filteredSortedEmps.filter(emp=>{if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLowerCase().includes(ptSearch.toLowerCase()))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
+    const filtered=filteredSortedEmps.filter(emp=>{if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLocaleLowerCase("tr").includes(ptSearch.toLocaleLowerCase("tr")))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
     const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],[".","Ayrıldı","#991b1b"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
 
     function handleBulkApply(){
@@ -1319,13 +1382,15 @@ function App(){
   function BorcAlacakPage(){
     const [baFirma,setBaFirma]=useState("");
     const [baSube,setBaSube]=useState("");
+    const BA=D.borcAlacak||{};
+    function getBA(empId){return BA[empId]||{ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};}
+    function kalanT(d){return(d.ihbarRP||0)-(d.ihbarRM||0)+(d.ihbarGP||0)-(d.ihbarGM||0)+(d.kidemRP||0)-(d.kidemRM||0)+(d.kidemGP||0)-(d.kidemGM||0)+(d.hacizP||0)-(d.hacizM||0)+(d.borcRP||0)-(d.borcRM||0)+(d.borcGP||0)-(d.borcGM||0);}
     const baEmps=filteredSortedEmps.filter(e=>{
       if(baFirma&&e.firma!==baFirma)return false;
       if(baSube&&e.sube!==baSube)return false;
+      if(kalanT(getBA(e.id))===0)return false;
       return true;
     });
-    const BA=D.borcAlacak||{};
-    function getBA(empId){return BA[empId]||{ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};}
     function setBA(empId,field,val){
       const n=Number(String(val).replace(/\./g,"").replace(",","."))||0;
       setDb(p=>{const ba={...p.borcAlacak||{}};if(!ba[empId])ba[empId]={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};ba[empId]={...ba[empId],[field]:n};return{...p,borcAlacak:ba};});
@@ -1353,7 +1418,6 @@ function App(){
       {h:"Borç Gr-",k:"borcGM",type:"input"},
       {h:"Borç Gr Kalan",k:"_bgk",type:"calc",calc:d=>(d.borcGP||0)-(d.borcGM||0)}
     ];
-    function kalanT(d){return(d.ihbarRP||0)-(d.ihbarRM||0)+(d.ihbarGP||0)-(d.ihbarGM||0)+(d.kidemRP||0)-(d.kidemRM||0)+(d.kidemGP||0)-(d.kidemGM||0)+(d.hacizP||0)-(d.hacizM||0)+(d.borcRP||0)-(d.borcRM||0)+(d.borcGP||0)-(d.borcGM||0);}
     /* Toplamlar */
     const totals={ihbarRP:0,ihbarRM:0,ihbarGP:0,ihbarGM:0,kidemRP:0,kidemRM:0,kidemGP:0,kidemGM:0,hacizP:0,hacizM:0,borcRP:0,borcRM:0,borcGP:0,borcGM:0};
     baEmps.forEach(e=>{const d=getBA(e.id);Object.keys(totals).forEach(k=>{totals[k]+=(d[k]||0);});});
@@ -1420,7 +1484,7 @@ function App(){
     const uniqueUsers=[...new Set(logs.map(l=>l.user))];
     const uniqueActions=[...new Set(logs.map(l=>l.action))];
     const filtered=logs.filter(l=>{
-      if(logSearch&&!l.detail.toLowerCase().includes(logSearch.toLowerCase())&&!l.action.toLowerCase().includes(logSearch.toLowerCase()))return false;
+      if(logSearch&&!l.detail.toLocaleLowerCase("tr").includes(logSearch.toLocaleLowerCase("tr"))&&!l.action.toLocaleLowerCase("tr").includes(logSearch.toLocaleLowerCase("tr")))return false;
       if(logUser&&l.user!==logUser)return false;
       if(logAction&&l.action!==logAction)return false;
       return true;
