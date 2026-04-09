@@ -136,10 +136,14 @@ let _saving=false;
 function loadDB(){return defaultDB;}
 
 /* Obje birleştirme: her anahtar için en güncel değeri al */
+/* Bu anahtarlar shallow merge yerine tamamen değiştirilir — silinen alt anahtarlar kalmasın diye */
+const FULL_REPLACE_KEYS=new Set(["bordroKapali","bordroDevir","bordroSnapshot","puantajDI","puantajIzinSnap"]);
 function mergeDB(server,local,changedKeys){
   const merged={...server};
   changedKeys.forEach(k=>{
-    if(typeof local[k]==="object"&&local[k]!==null&&!Array.isArray(local[k])&&typeof server[k]==="object"&&server[k]!==null&&!Array.isArray(server[k])){
+    if(FULL_REPLACE_KEYS.has(k)){
+      merged[k]=local[k];
+    }else if(typeof local[k]==="object"&&local[k]!==null&&!Array.isArray(local[k])&&typeof server[k]==="object"&&server[k]!==null&&!Array.isArray(server[k])){
       merged[k]={...server[k],...local[k]};
     }else{
       merged[k]=local[k];
