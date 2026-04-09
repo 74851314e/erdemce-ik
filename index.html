@@ -97,7 +97,7 @@ const defaultDB={
   ],
   nextFirmaId:6,nextSubeId:6,
   durumlar:["S","E","K","."],
-  izinGunleri:["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","CP"],
+  izinGunleri:["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","CP","Parttime"],
   employees:[
     {id:1,name:"AHMET ÇİMEN",tc:"",gorev:"Usta",firma:"Mnl Gıda",sube:"Sahrayıcedit",bolum:"Börek",maas:78000,yol:2000,sabitAvans:35000,izin:"Pazar",durum:"S",iseGiris:"2021-03-15",istenCikis:"",kidem:"2021-03-15",dogumGunu:"1990-08-20",cepTel:"",iban:""},
     {id:2,name:"ALİ ÇİMEN",tc:"",gorev:"Kalfa",firma:"Mnl Gıda",sube:"Suadiye",bolum:"Çikolata",maas:38000,yol:2000,sabitAvans:20000,izin:"Pazar",durum:"S",iseGiris:"2022-06-01",istenCikis:"",kidem:"2022-06-01",dogumGunu:"1995-12-03",cepTel:"",iban:""},
@@ -263,7 +263,9 @@ function App(){
   /* Sunucudan veri yükle — uygulama açıldığında bir kez çalışır */
   useEffect(()=>{
     fetch("/api/data").then(r=>r.json()).then(data=>{
-      setDbRaw({...defaultDB,...data});
+      const merged={...defaultDB,...data};
+      if(merged.izinGunleri&&!merged.izinGunleri.includes("Parttime"))merged.izinGunleri=[...merged.izinGunleri,"Parttime"];
+      setDbRaw(merged);
       setLoading(false);
     }).catch(()=>setLoading(false));
   },[]);
@@ -389,11 +391,11 @@ function App(){
   function bKey(empId){return donemKey+"|"+empId;}
   const izinDowMap={"Pazar":[0],"Pazartesi":[1],"Salı":[2],"Çarşamba":[3],"Perşembe":[4],"Cuma":[5],"Cumartesi":[6],"CP":[0,6]};
   function getEmpIzin(emp){const snap=D.bordroSnapshot[bKey(emp.id)];return(snap&&snap.izin)?snap.izin:emp.izin;}
-  function isIzinDay(emp,day){const dows=izinDowMap[getEmpIzin(emp)]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
+  function isIzinDay(emp,day){const izinAd=getEmpIzin(emp);if(izinAd==="Parttime")return true;const dows=izinDowMap[izinAd]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
-  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const gun=Math.max(0,30-ayr);const di=Number(D.puantajDI[bKey(emp.id)])||0;return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr,di};}
+  function getPSummary(emp){let mesai=0,fmC=0,saatT=0,yiC=0,rtC=0,ayr=0;for(let d=1;d<=pDays;d++){const code=getCellCode(emp.id,d);const izin=isIzinDay(emp,d);const isRT=isHolidayDay(d);if(code==="."){ayr++;continue;}if(isRT){if(code==="X"||code==="FM"||code==="S"||code==="/")rtC++;}else if(izin){if(code==="X"||code==="FM"||code==="S")mesai++;if(code==="/")mesai+=0.5;}else{if(code==="-"||code==="M"||code==="R"||code==="H")mesai--;if(code==="/")mesai-=0.5;}if(code==="FM")fmC++;if(code==="S")saatT+=(D.puantajSaat[pKey(emp.id,d)]||0);if(code==="Yİ")yiC++;}const isPartTime=getEmpIzin(emp)==="Parttime";const gun=isPartTime?0:Math.max(0,30-ayr);const di=Number(D.puantajDI[bKey(emp.id)])||0;return{saat:saatT,mesai,fm:fmC,yi:yiC,rt:rtC,gun,ayr,di};}
 
   /* BORDRO */
   function isKapali(firma,sube){return !!D.bordroKapali[donemKey+"|"+firma+"|"+sube];}
