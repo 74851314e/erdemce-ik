@@ -251,6 +251,12 @@ function App(){
   const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);
   const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");const [bDs,setBDs]=useState([]);const [bDurDrop,setBDurDrop]=useState(false);const [bKalanF,setBKalanF]=useState("");
   const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
+  /* Kullanıcı düzenleme state'leri (App seviyesinde — page remount'ta kaybolmasın) */
+  const [editUid,setEditUid]=useState(null);
+  const [editPerms,setEditPerms]=useState({});
+  const [editFirmalar,setEditFirmalar]=useState([]);
+  const [editSubeler,setEditSubeler]=useState([]);
+  const [editUserInfo,setEditUserInfo]=useState({name:"",pass:"",role:""});
   const fileRef=useRef();
   const ptSearchRef=useRef();
 
@@ -1583,11 +1589,6 @@ function App(){
   function AyarlarPage(){
     const dO=listOps("durumlar"),iO=listOps("izinGunleri");
     const [uf,setUf]=useState({name:"",pass:"",role:"kullanici"});
-    const [editUid,setEditUid]=useState(null);
-    const [editUserInfo,setEditUserInfo]=useState({name:"",pass:"",role:""});
-    const [editPerms,setEditPerms]=useState({});
-    const [editFirmalar,setEditFirmalar]=useState([]);
-    const [editSubeler,setEditSubeler]=useState([]);
     const [selFirmaId,setSelFirmaId]=useState(null);
     const [ef,setEf]=useState(null); /* editFirma - yerel kopya */
     const [firmaForm,setFirmaForm]=useState({kod:"",ad:"",adres:"",vergiNo:"",vergiDairesi:"",telefon:"",firmaTuru:""});
