@@ -256,7 +256,7 @@ function App(){
   const [editPerms,setEditPerms]=useState({});
   const [editFirmalar,setEditFirmalar]=useState([]);
   const [editSubeler,setEditSubeler]=useState([]);
-  const [editUserInfo,setEditUserInfo]=useState({name:"",pass:"",role:""});
+  const editUserInfoRef=useRef({name:"",pass:"",role:""});
   const fileRef=useRef();
   const ptSearchRef=useRef();
 
@@ -1600,9 +1600,10 @@ function App(){
     const addUser=()=>{if(!uf.name||!uf.pass)return alert("Ad ve Şifre zorunlu!");setDb(p=>({...p,users:[...p.users,{id:p.nextUserId,name:uf.name,pass:uf.pass,role:uf.role,firmalar:[],subeler:[],perms:MODULES.reduce((a,m)=>({...a,[m.key]:{gor:true,ekle:false,degistir:false,sil:false}}),{})}],nextUserId:p.nextUserId+1}),addLog("Kullanıcı Eklendi",uf.name+" ("+uf.role+")"));setUf({name:"",pass:"",role:"kullanici"});};
     const savePerms=(uid)=>{
       const u=D.users.find(x=>x.id===uid);
-      const newName=editUserInfo.name.trim()||u.name;
-      const newPass=editUserInfo.pass||u.pass;
-      const newRole=editUserInfo.role||u.role;
+      const ui=editUserInfoRef.current;
+      const newName=(ui.name||"").trim()||u.name;
+      const newPass=ui.pass||u.pass;
+      const newRole=ui.role||u.role;
       /* Admin rolünü değiştirmeye izin verme */
       const finalRole=u.role==="admin"?"admin":newRole;
       setDb(p=>({...p,users:p.users.map(x=>x.id===uid?{...x,name:newName,pass:newPass,role:finalRole,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:x)}),addLog("Kullanıcı Güncellendi",newName));
@@ -1754,19 +1755,19 @@ function App(){
           <td style={tdS}><Badge text={u.role==="admin"?"ADMİN":u.role==="yonetici"?"YÖNETİCİ":"KULLANICI"} bg={u.role==="admin"?C.teal:u.role==="yonetici"?C.pur:C.blu} color="#fff"/></td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{u.role==="admin"?"Tüm Yetkiler":(Object.entries(u.perms||{}).filter(([k,v])=>Object.values(v).some(x=>x)).map(([k])=>MODULES.find(m=>m.key===k)?.label).filter(Boolean).join(", ")||"Yetki yok")+(u.firmalar&&u.firmalar.length?" | Firma: "+u.firmalar.join(", "):"")+(u.subeler&&u.subeler.length?" | Şube: "+u.subeler.join(", "):"")}</td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
-            <button onClick={()=>{setEditUid(u.id);setEditPerms({...(u.perms||{})});setEditFirmalar(u.firmalar||[]);setEditSubeler(u.subeler||[]);setEditUserInfo({name:u.name,pass:"",role:u.role});}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
+            <button onClick={()=>{editUserInfoRef.current={name:u.name,pass:"",role:u.role};setEditUid(u.id);setEditPerms({...(u.perms||{})});setEditFirmalar(u.firmalar||[]);setEditSubeler(u.subeler||[]);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
             {u.role!=="admin"&&<button onClick={()=>{const uName=u.name;setDb(p=>({...p,users:p.users.filter(x=>x.id!==u.id)}),addLog("Kullanıcı Silindi",uName));}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
           </span></td>
         </tr>)}</tbody></table>
       </div>
       {/* YETKI MODAL */}
-      {editUid&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.blu,marginBottom:20}}>
+      {editUid&&<div key={editUid} style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.blu,marginBottom:20}}>
         <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Kullanıcı Düzenle: {D.users.find(u=>u.id===editUid)?.name}</div>
         <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Ad, şifre, rol ve yetkileri belirleyin</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20,paddingBottom:20,borderBottom:"1px solid "+C.brd}}>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Kullanıcı Adı</div><input value={editUserInfo.name} onChange={e=>setEditUserInfo({...editUserInfo,name:e.target.value})}/></div>
-          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yeni Şifre {D.users.find(u=>u.id===editUid)?.role!=="admin"&&<span style={{color:C.mut,fontWeight:400}}>(boş = değişme)</span>}</div><input type="text" value={editUserInfo.pass} onChange={e=>setEditUserInfo({...editUserInfo,pass:e.target.value})} placeholder="Yeni şifre..."/></div>
-          {D.users.find(u=>u.id===editUid)?.role!=="admin"?<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><select value={editUserInfo.role} onChange={e=>setEditUserInfo({...editUserInfo,role:e.target.value})}><option value="kullanici">Kullanıcı</option><option value="yonetici">Yönetici</option></select></div>:<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><div style={{padding:"10px 12px",background:C.brdLt,borderRadius:6,fontSize:13,color:C.sec}}>Admin (değiştirilemez)</div></div>}
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Kullanıcı Adı</div><input defaultValue={editUserInfoRef.current.name} onChange={e=>{editUserInfoRef.current.name=e.target.value;}}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yeni Şifre {D.users.find(u=>u.id===editUid)?.role!=="admin"&&<span style={{color:C.mut,fontWeight:400}}>(boş = değişme)</span>}</div><input type="text" defaultValue="" onChange={e=>{editUserInfoRef.current.pass=e.target.value;}} placeholder="Yeni şifre..."/></div>
+          {D.users.find(u=>u.id===editUid)?.role!=="admin"?<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><select defaultValue={editUserInfoRef.current.role} onChange={e=>{editUserInfoRef.current.role=e.target.value;}}><option value="kullanici">Kullanıcı</option><option value="yonetici">Yönetici</option></select></div>:<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><div style={{padding:"10px 12px",background:C.brdLt,borderRadius:6,fontSize:13,color:C.sec}}>Admin (değiştirilemez)</div></div>}
         </div>
         {D.users.find(u=>u.id===editUid)?.role==="admin"?<div style={{padding:16,background:"#f0f9ff",borderRadius:8,fontSize:13,color:C.blu}}>Admin tüm yetkilere sahiptir, ek izin ayarı gerekmez.</div>:<><table><thead><tr><th style={thS}>MODÜL</th>{PERMS.map(p=><th key={p} style={{...thS,textAlign:"center"}}>{PERM_LABELS[p]}</th>)}</tr></thead>
         <tbody>{MODULES.filter(m=>m.key!=="ayarlar"||curUser.role==="admin").map(m=><tr key={m.key}>
