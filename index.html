@@ -267,7 +267,8 @@ function App(){
   useEffect(()=>{
     const interval=setInterval(()=>{
       if(_saving)return;
-      if(Date.now()-lastLocalChange.current<3000)return; /* Son değişiklikten 3sn geçmeden çekme */
+      if(Date.now()-lastLocalChange.current<5000)return; /* Son değişiklikten 5sn geçmeden çekme */
+      if(_changedKeys.size>0)return; /* Bekleyen yerel değişiklik varsa çekme */
       fetch("/api/data").then(r=>r.json()).then(data=>{
         if(data&&Object.keys(data).length>0){
           setDbRaw(prev=>{
@@ -1583,6 +1584,7 @@ function App(){
     const dO=listOps("durumlar"),iO=listOps("izinGunleri");
     const [uf,setUf]=useState({name:"",pass:"",role:"kullanici"});
     const [editUid,setEditUid]=useState(null);
+    const [editUserInfo,setEditUserInfo]=useState({name:"",pass:"",role:""});
     const [editPerms,setEditPerms]=useState({});
     const [editFirmalar,setEditFirmalar]=useState([]);
     const [editSubeler,setEditSubeler]=useState([]);
@@ -1593,7 +1595,16 @@ function App(){
     const [bolVal,setBolVal]=useState("");
     const [gorVal,setGorVal]=useState("");
     const addUser=()=>{if(!uf.name||!uf.pass)return alert("Ad ve Şifre zorunlu!");setDb(p=>({...p,users:[...p.users,{id:p.nextUserId,name:uf.name,pass:uf.pass,role:uf.role,firmalar:[],subeler:[],perms:MODULES.reduce((a,m)=>({...a,[m.key]:{gor:true,ekle:false,degistir:false,sil:false}}),{})}],nextUserId:p.nextUserId+1}),addLog("Kullanıcı Eklendi",uf.name+" ("+uf.role+")"));setUf({name:"",pass:"",role:"kullanici"});};
-    const savePerms=(uid)=>{const u=D.users.find(x=>x.id===uid);setDb(p=>({...p,users:p.users.map(u=>u.id===uid?{...u,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:u)}),addLog("Yetki Güncellendi",u?u.name:"#"+uid));setEditUid(null);};
+    const savePerms=(uid)=>{
+      const u=D.users.find(x=>x.id===uid);
+      const newName=editUserInfo.name.trim()||u.name;
+      const newPass=editUserInfo.pass||u.pass;
+      const newRole=editUserInfo.role||u.role;
+      /* Admin rolünü değiştirmeye izin verme */
+      const finalRole=u.role==="admin"?"admin":newRole;
+      setDb(p=>({...p,users:p.users.map(x=>x.id===uid?{...x,name:newName,pass:newPass,role:finalRole,perms:editPerms,firmalar:editFirmalar,subeler:editSubeler}:x)}),addLog("Kullanıcı Güncellendi",newName));
+      setEditUid(null);
+    };
     /* Firma seç → yerel kopyasını al */
     function selectFirma(id){
       const f=FL.find(x=>x.id===id);
@@ -1740,21 +1751,25 @@ function App(){
           <td style={tdS}><Badge text={u.role==="admin"?"ADMİN":u.role==="yonetici"?"YÖNETİCİ":"KULLANICI"} bg={u.role==="admin"?C.teal:u.role==="yonetici"?C.pur:C.blu} color="#fff"/></td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{u.role==="admin"?"Tüm Yetkiler":(Object.entries(u.perms||{}).filter(([k,v])=>Object.values(v).some(x=>x)).map(([k])=>MODULES.find(m=>m.key===k)?.label).filter(Boolean).join(", ")||"Yetki yok")+(u.firmalar&&u.firmalar.length?" | Firma: "+u.firmalar.join(", "):"")+(u.subeler&&u.subeler.length?" | Şube: "+u.subeler.join(", "):"")}</td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
-            {u.role!=="admin"&&<button onClick={()=>{setEditUid(u.id);setEditPerms({...u.perms});setEditFirmalar(u.firmalar||[]);setEditSubeler(u.subeler||[]);}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
+            <button onClick={()=>{setEditUid(u.id);setEditPerms({...(u.perms||{})});setEditFirmalar(u.firmalar||[]);setEditSubeler(u.subeler||[]);setEditUserInfo({name:u.name,pass:"",role:u.role});}} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>
             {u.role!=="admin"&&<button onClick={()=>{const uName=u.name;setDb(p=>({...p,users:p.users.filter(x=>x.id!==u.id)}),addLog("Kullanıcı Silindi",uName));}} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
           </span></td>
         </tr>)}</tbody></table>
       </div>
       {/* YETKI MODAL */}
       {editUid&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"2px solid "+C.blu,marginBottom:20}}>
-        <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Yetki Düzenle: {D.users.find(u=>u.id===editUid)?.name}</div>
-        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Her modül için yetkileri belirleyin</div>
-        <table><thead><tr><th style={thS}>MODÜL</th>{PERMS.map(p=><th key={p} style={{...thS,textAlign:"center"}}>{PERM_LABELS[p]}</th>)}</tr></thead>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Kullanıcı Düzenle: {D.users.find(u=>u.id===editUid)?.name}</div>
+        <div style={{fontSize:12,color:C.sec,marginBottom:16}}>Ad, şifre, rol ve yetkileri belirleyin</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20,paddingBottom:20,borderBottom:"1px solid "+C.brd}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Kullanıcı Adı</div><input value={editUserInfo.name} onChange={e=>setEditUserInfo({...editUserInfo,name:e.target.value})}/></div>
+          <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Yeni Şifre {D.users.find(u=>u.id===editUid)?.role!=="admin"&&<span style={{color:C.mut,fontWeight:400}}>(boş = değişme)</span>}</div><input type="text" value={editUserInfo.pass} onChange={e=>setEditUserInfo({...editUserInfo,pass:e.target.value})} placeholder="Yeni şifre..."/></div>
+          {D.users.find(u=>u.id===editUid)?.role!=="admin"?<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><select value={editUserInfo.role} onChange={e=>setEditUserInfo({...editUserInfo,role:e.target.value})}><option value="kullanici">Kullanıcı</option><option value="yonetici">Yönetici</option></select></div>:<div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Rol</div><div style={{padding:"10px 12px",background:C.brdLt,borderRadius:6,fontSize:13,color:C.sec}}>Admin (değiştirilemez)</div></div>}
+        </div>
+        {D.users.find(u=>u.id===editUid)?.role==="admin"?<div style={{padding:16,background:"#f0f9ff",borderRadius:8,fontSize:13,color:C.blu}}>Admin tüm yetkilere sahiptir, ek izin ayarı gerekmez.</div>:<><table><thead><tr><th style={thS}>MODÜL</th>{PERMS.map(p=><th key={p} style={{...thS,textAlign:"center"}}>{PERM_LABELS[p]}</th>)}</tr></thead>
         <tbody>{MODULES.filter(m=>m.key!=="ayarlar"||curUser.role==="admin").map(m=><tr key={m.key}>
           <td style={tdS}>{m.label}</td>
           {PERMS.map(p=><td key={p} style={{...tdS,textAlign:"center"}}><input type="checkbox" checked={editPerms[m.key]?.[p]||false} onChange={e=>{const np={...editPerms};if(!np[m.key])np[m.key]={gor:false,ekle:false,degistir:false,sil:false};np[m.key][p]=e.target.checked;setEditPerms(np);}} style={{width:"auto",cursor:"pointer"}}/></td>)}
         </tr>)}</tbody></table>
-        <div style={{display:"flex",gap:10,marginTop:16}}><Btn bg={C.blu} onClick={()=>savePerms(editUid)}><IcSave/> Kaydet</Btn><Btn bg="#6b7280" onClick={()=>setEditUid(null)}><IcX/> İptal</Btn></div>
         <div style={{marginTop:20,paddingTop:20,borderTop:"1px solid "+C.brd}}>
           <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Erişim İzni: Firmalar ve Şubeler</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
@@ -1773,7 +1788,8 @@ function App(){
               </label>)}
             </div>
           </div>
-        </div>
+        </div></>}
+        <div style={{display:"flex",gap:10,marginTop:20,paddingTop:20,borderTop:"1px solid "+C.brd}}><Btn bg={C.blu} onClick={()=>savePerms(editUid)}><IcSave/> Kaydet</Btn><Btn bg="#6b7280" onClick={()=>setEditUid(null)}><IcX/> İptal</Btn></div>
       </div>}
       {/* GENEL TANIMLAR */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
