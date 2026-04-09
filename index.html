@@ -671,7 +671,7 @@ function App(){
       const tcVal=form.tc||"";const ibanVal=form.iban||"";
       const cleanForm={...form};delete cleanForm.tc;delete cleanForm.iban;
       let savedId=editId;
-      if(editId){setDb(p=>({...p,employees:p.employees.map(e=>e.id===editId?{...cleanForm,id:editId,maas:Number(cleanForm.maas),yol:Number(cleanForm.yol),sabitAvans:Number(cleanForm.sabitAvans)}:e)}),addLog("Personel Güncellendi",form.name));setEditId(null);}
+      if(editId){setDb(p=>({...p,employees:p.employees.map(e=>e.id===editId?{...e,...cleanForm,id:editId,maas:Number(cleanForm.maas),yol:Number(cleanForm.yol),sabitAvans:Number(cleanForm.sabitAvans)}:e)}),addLog("Personel Güncellendi",form.name));setEditId(null);}
       else{setDb(p=>{savedId=p.nextEmpId;return{...p,employees:[...p.employees,{...cleanForm,id:p.nextEmpId,maas:Number(cleanForm.maas),yol:Number(cleanForm.yol),sabitAvans:Number(cleanForm.sabitAvans)}],nextEmpId:p.nextEmpId+1};},addLog("Personel Eklendi",form.name));}
       if(isAdmin&&savedId&&(tcVal||ibanVal)){
         setTimeout(()=>{saveHassasItem(savedId,tcVal,ibanVal).catch(e=>alert("Hassas veri Sheets'e kaydedilemedi: "+e.message));},100);
@@ -975,8 +975,8 @@ function App(){
       const devir={...D.bordroDevir};
       const snap={...D.bordroSnapshot};
       filtered.forEach(b=>{
-        /* Kalan → bir sonraki ayın devir sütununa */
-        devir[ndk+"|"+b.emp.id]=b.kalan;
+        /* Kalan → bir sonraki ayın devir sütununa (sadece |kalan| > 30 ise) */
+        if(Math.abs(b.kalan)>30)devir[ndk+"|"+b.emp.id]=b.kalan;
         /* Snapshot bu dönem için */
         snap[bKey(b.emp.id)]={maas:b.emp.maas,yol:b.emp.yol,sabitAvans:b.emp.sabitAvans};
       });
