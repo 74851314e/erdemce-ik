@@ -377,7 +377,8 @@ function App(){
   function pKey(empId,day){return donemKey+"|"+empId+"-"+day;}
   function bKey(empId){return donemKey+"|"+empId;}
   const izinDowMap={"Pazar":[0],"Pazartesi":[1],"Salı":[2],"Çarşamba":[3],"Perşembe":[4],"Cuma":[5],"Cumartesi":[6],"CP":[0,6]};
-  function isIzinDay(emp,day){const dows=izinDowMap[emp.izin]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
+  function getEmpIzin(emp){const snap=D.bordroSnapshot[bKey(emp.id)];return(snap&&snap.izin)?snap.izin:emp.izin;}
+  function isIzinDay(emp,day){const dows=izinDowMap[getEmpIzin(emp)]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
@@ -935,7 +936,7 @@ function App(){
         rows+="<tr"+(rc?" class='"+rc+"'":"")+">";
         rows+="<td><b>"+b.emp.name+"</b></td>";
         rows+="<td>"+b.emp.durum+"</td>";
-        rows+="<td>"+b.emp.izin+"</td>";
+        rows+="<td>"+getEmpIzin(b.emp)+"</td>";
         rows+="<td>"+fmt(b.maas)+"</td>";
         rows+="<td class='blu'>"+b.gun+"</td>";
         rows+="<td>"+fmt(b.yol)+"</td>";
@@ -977,8 +978,8 @@ function App(){
       filtered.forEach(b=>{
         /* Kalan → bir sonraki ayın devir sütununa (sadece |kalan| > 30 ise) */
         if(Math.abs(b.kalan)>30)devir[ndk+"|"+b.emp.id]=b.kalan;
-        /* Snapshot bu dönem için */
-        snap[bKey(b.emp.id)]={maas:b.emp.maas,yol:b.emp.yol,sabitAvans:b.emp.sabitAvans};
+        /* Snapshot bu dönem için (izin günü dahil) */
+        snap[bKey(b.emp.id)]={maas:b.emp.maas,yol:b.emp.yol,sabitAvans:b.emp.sabitAvans,izin:getEmpIzin(b.emp)};
       });
       setDb(p=>({...p,bordroKapali:{...p.bordroKapali,[kapKey]:true},bordroDevir:devir,bordroSnapshot:snap}),addLog("Dönem Kapatıldı",bFirma+" / "+bSube+" — "+donemLabel));
       alert(bFirma+" / "+bSube+" — "+donemLabel+" dönemi kapatıldı. Kalanlar bir sonraki aya devredildi.");
@@ -1129,7 +1130,7 @@ function App(){
               return <tr key={b.emp.id} className={rowCls} style={{borderBottom:"1px solid "+C.brdLt,background:locked?"#f9fafb":rc}}>
               <td onMouseEnter={e=>{if(b.emp.foto)setHoverFoto({foto:b.emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(b.emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{b.emp.name}</td>
               <td style={{...tc,padding:"4px 2px"}}><span style={{display:"inline-block",padding:"2px 6px",borderRadius:4,background:db.bg,color:db.cl,fontSize:10,fontWeight:700}}>{b.emp.durum}</span></td>
-              <td style={{...tc,color:C.sec}}>{b.emp.izin}</td>
+              <td style={{...tc,color:C.sec}}>{getEmpIzin(b.emp)}</td>
               <td style={tc}>{fmt(b.maas)}</td>
               <td style={{...tc,color:C.blu}}>{b.gun}</td>
               <td style={tc}>{fmt(b.yol)}</td>
@@ -1246,7 +1247,7 @@ function App(){
         const sm=getPSummary(emp);
         const rBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"";
         rows+="<tr"+(rBg?" style='background:"+rBg+"'":"")+">";
-        rows+="<td><b>"+emp.name+"</b></td><td>"+emp.izin+"</td>";
+        rows+="<td><b>"+emp.name+"</b></td><td>"+getEmpIzin(emp)+"</td>";
         for(let d=1;d<=pDays;d++){
           const code=getCellCode(emp.id,d);
           const iz=isIzinDay(emp,d);const rt=isHolidayDay(d);
@@ -1389,7 +1390,7 @@ function App(){
             return <tr key={emp.id} style={{borderBottom:"1px solid "+C.brdLt,background:rowBg}}>
               <td onMouseEnter={e=>{if(emp.foto)setHoverFoto({foto:emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{emp.name}</td>
               <td style={{...tdS,color:C.sec,fontSize:12}}>{emp.firma}</td>
-              <td style={{...tdS,color:C.sec,fontSize:12,textAlign:"center"}}>{emp.izin}</td>
+              <td style={{...tdS,color:C.sec,fontSize:12,textAlign:"center"}}>{getEmpIzin(emp)}</td>
               {Array.from({length:pDays},(_,di)=>{const day=di+1;const code=getCellCode(emp.id,day);const izin=isIzinDay(emp,day);const isRT=isHolidayDay(day);const cs=codeStyle(code);
                 let bg,bd,cl;
                 if(isRT){bg="#dbeafe";bd="1px solid #93c5fd";cl=cs?cs.cl:"#2563eb";}
