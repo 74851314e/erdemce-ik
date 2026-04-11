@@ -393,6 +393,25 @@ function App(){
   const izinDowMap={"Pazar":[0],"Pazartesi":[1],"Salı":[2],"Çarşamba":[3],"Perşembe":[4],"Cuma":[5],"Cumartesi":[6],"CP":[0,6]};
   function getEmpIzin(emp){const snap=D.bordroSnapshot[bKey(emp.id)];return(snap&&snap.izin)?snap.izin:emp.izin;}
   function isIzinDay(emp,day){const izinAd=getEmpIzin(emp);if(izinAd==="Parttime")return true;const dows=izinDowMap[izinAd]||[0];return dows.includes(new Date(pYear,pMonth,day).getDay());}
+  /* Bir tarih aralığında personelin "kullandığı" yıllık izin gün sayısı - haftalık izin günleri ve resmi tatilleri çıkarır */
+  function calcWorkingDays(emp,startStr,endStr){
+    if(!startStr||!endStr)return 0;
+    const izinAd=emp?emp.izin:"Pazar";
+    const dows=izinDowMap[izinAd]||[0];
+    const start=new Date(startStr+"T00:00:00");
+    const end=new Date(endStr+"T00:00:00");
+    if(end<start)return 0;
+    let count=0;
+    const d=new Date(start);
+    while(d<=end){
+      const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      const isHol=(D.holidays||[]).some(h=>ds>=h.s&&ds<=h.e);
+      const isWeeklyOff=dows.includes(d.getDay());
+      if(!isHol&&!isWeeklyOff)count++;
+      d.setDate(d.getDate()+1);
+    }
+    return count;
+  }
   function isHolidayDay(day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.holidays.some(h=>ds>=h.s&&ds<=h.e);}
   function hasYiLeave(eId,day){const ds=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");return D.leaves.some(l=>l.empId===eId&&l.type==="Yİ"&&ds>=l.start&&ds<=l.end);}
   function getCellCode(eId,day){const key=pKey(eId,day);if(D.puantajCells[key])return D.puantajCells[key];const emp=D.employees.find(e=>e.id===eId);if(!emp)return "";if(isHolidayDay(day))return "RT";if(hasYiLeave(eId,day)&&!isIzinDay(emp,day))return "Yİ";return "";}
@@ -1250,8 +1269,9 @@ function App(){
     }).sort((a,b)=>a.name.localeCompare(b.name,"tr"));
     function getHak(eid,y){return Number(D.yillikIzinHak[eid+"|"+y])||0;}
     function setHak(eid,y,v){const n=Number(v)||0;setDb(p=>({...p,yillikIzinHak:{...p.yillikIzinHak,[eid+"|"+y]:n}}),addLog("Yıllık İzin Hak Güncellendi",empName(eid)+" "+y+" → "+n+" gün"));}
-    function getKullanilan(eid,y){return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y)).reduce((s,l)=>s+(l.days||0),0);}
-    function getKullanilanLeaves(eid,y){return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y));}
+    function getKullanilan(eid,y){const emp=D.employees.find(x=>x.id===eid);return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y)).reduce((s,l)=>s+calcWorkingDays(emp,l.start,l.end),0);}
+    function getKullanilanLeaves(eid,y){const emp=D.employees.find(x=>x.id===eid);return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y)).map(l=>({...l,workDays:calcWorkingDays(emp,l.start,l.end)}));}
+    function getAllUsedLeaves(eid){const emp=D.employees.find(x=>x.id===eid);return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ").map(l=>({...l,workDays:calcWorkingDays(emp,l.start,l.end)})).sort((a,b)=>b.start.localeCompare(a.start));}
     function getKalan(eid,y){return getHak(eid,y)-getKullanilan(eid,y);}
     function YearCells({e,y}){
       const hak=getHak(e.id,y);const kul=getKullanilan(e.id,y);const kal=hak-kul;
@@ -1300,7 +1320,7 @@ function App(){
           let izinT=0,genIzinT=0;
           years.forEach((y,i)=>{const k=getKalan(e.id,y);genIzinT+=k;if(i>0)izinT+=k;});
           return <tr key={e.id}>
-            <td style={{padding:"8px 12px",fontSize:12,fontWeight:600,position:"sticky",left:0,background:"#fff",zIndex:1,whiteSpace:"nowrap",borderRight:"1px solid "+C.brd}}>{e.name}</td>
+            <td onMouseEnter={ev=>{const list=getAllUsedLeaves(e.id);if(list.length>0)setHoverInfo({list,emp:e.name,showYear:true,x:ev.clientX+12,y:ev.clientY+12});}} onMouseMove={ev=>setHoverInfo(h=>h?{...h,x:ev.clientX+12,y:ev.clientY+12}:null)} onMouseLeave={()=>setHoverInfo(null)} style={{padding:"8px 12px",fontSize:12,fontWeight:600,position:"sticky",left:0,background:"#fff",zIndex:1,whiteSpace:"nowrap",borderRight:"1px solid "+C.brd,cursor:"help"}}>{e.name}</td>
             <td style={{textAlign:"center",fontSize:13,fontWeight:800,background:"#dcfce7",borderLeft:"2px solid "+C.brd,padding:"6px 4px",color:C.grn}}>{genIzinT||"-"}</td>
             <td style={{textAlign:"center",fontSize:13,fontWeight:800,background:"#fef3c7",borderLeft:"2px solid "+C.brd,padding:"6px 4px"}}>{izinT||"-"}</td>
             <YearCells e={e} y={curYear}/>
@@ -1309,9 +1329,12 @@ function App(){
         })}</tbody></table>
         {emps.length===0&&<div style={{padding:30,textAlign:"center",color:C.mut}}>Personel bulunamadı</div>}
       </div>
-      {hoverInfo&&<div style={{position:"fixed",left:hoverInfo.x,top:hoverInfo.y,background:"#fff",border:"2px solid "+C.teal,borderRadius:8,padding:"12px 16px",boxShadow:"0 6px 20px rgba(0,0,0,.3)",zIndex:300,pointerEvents:"none",fontSize:12,minWidth:240}}>
+      {hoverInfo&&<div style={{position:"fixed",left:hoverInfo.x,top:hoverInfo.y,background:"#fff",border:"2px solid "+C.teal,borderRadius:8,padding:"12px 16px",boxShadow:"0 6px 20px rgba(0,0,0,.3)",zIndex:300,pointerEvents:"none",fontSize:12,minWidth:280}}>
         <div style={{fontWeight:700,marginBottom:6,color:C.teal}}>{hoverInfo.emp}</div>
-        {hoverInfo.list.map((l,i)=><div key={i} style={{padding:"4px 0",borderTop:i>0?"1px solid "+C.brdLt:"none"}}>{l.start} → {l.end} <span style={{color:C.sec}}>({l.days} gün)</span></div>)}
+        {hoverInfo.list.map((l,i)=><div key={i} style={{padding:"4px 0",borderTop:i>0?"1px solid "+C.brdLt:"none"}}>
+          {hoverInfo.showYear&&<span style={{display:"inline-block",minWidth:42,fontWeight:700,color:C.blu}}>{l.yil||"?"}</span>}
+          {l.start} → {l.end} <span style={{color:C.sec}}>({l.workDays} iş günü)</span>
+        </div>)}
       </div>}
     </div>;
   }
