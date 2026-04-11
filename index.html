@@ -248,9 +248,9 @@ function App(){
   const [page,setPage]=useState("dashboard");
   const [sideOpen,setSideOpen]=useState(true);
   /* GLOBAL FILTER STATES - persist across re-renders */
-  const [pSearch,setPSearch]=useState("");const [pFirma,setPFirma]=useState("");const [pSube,setPSube]=useState("");
-  const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);
-  const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");const [bDs,setBDs]=useState([]);const [bDurDrop,setBDurDrop]=useState(false);const [bKalanF,setBKalanF]=useState("");
+  const [pSearch,setPSearch]=useState("");const [pFirma,setPFirma]=useState("");const [pSube,setPSube]=useState("");const [pAP,setPAP]=useState("A");
+  const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);const [ptAP,setPtAP]=useState("A");
+  const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");const [bDs,setBDs]=useState([]);const [bDurDrop,setBDurDrop]=useState(false);const [bKalanF,setBKalanF]=useState("");const [bAP,setBAP]=useState("A");
   const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
   /* Kullanıcı düzenleme state'leri (App seviyesinde — page remount'ta kaybolmasın) */
   const [editUid,setEditUid]=useState(null);
@@ -680,6 +680,8 @@ function App(){
 
     const pSearchRef=useRef();
     const filteredEmps=filteredSortedEmps.filter(e=>{
+      if(pAP==="A"&&e.durum==="K")return false;
+      if(pAP==="P"&&e.durum!=="K")return false;
       if(pSearch&&!e.name.toLocaleLowerCase("tr").includes(pSearch.toLocaleLowerCase("tr")))return false;
       if(pFirma&&e.firma!==pFirma)return false;
       if(pSube&&e.sube!==pSube)return false;
@@ -824,8 +826,12 @@ function App(){
         <input ref={pSearchRef} placeholder="Personel Ara..." defaultValue={pSearch} onKeyDown={e=>{if(e.key==="Enter")setPSearch(e.target.value);}} onBlur={e=>setPSearch(e.target.value)} style={{width:180}}/>
         <select value={pFirma} onChange={e=>{setPFirma(e.target.value);setPSube("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(x=><option key={x} value={x}>{x}</option>)}</select>
         <select value={pSube} onChange={e=>setPSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(pFirma?getFirmaSubs(pFirma):userSubs).map(x=><option key={x} value={x}>{x}</option>)}</select>
+        <div style={{display:"inline-flex",border:"1px solid "+C.brd,borderRadius:6,overflow:"hidden"}}>
+          <button onClick={()=>setPAP("A")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:pAP==="A"?C.teal:"#fff",color:pAP==="A"?"#fff":C.sec,fontWeight:600,fontSize:12}}>Aktif</button>
+          <button onClick={()=>setPAP("P")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:pAP==="P"?C.red:"#fff",color:pAP==="P"?"#fff":C.sec,fontWeight:600,fontSize:12,borderLeft:"1px solid "+C.brd}}>Pasif</button>
+        </div>
         <div style={{flex:1}}/>
-        <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");if(pSearchRef.current)pSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+        <span onClick={()=>{setPSearch("");setPFirma("");setPSube("");setPAP("A");if(pSearchRef.current)pSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
       {/* TOPLU GÜNCELLEME */}
       {can("degistir")&&<div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,border:"1px solid "+(selCount>0?C.blu:C.cardBrd),display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
@@ -945,7 +951,7 @@ function App(){
   function BordroPage(){
     const [hoverFoto,setHoverFoto]=useState(null);
     const bSearchRef=useRef();
-    const filtered=bordroData.filter(b=>{if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
+    const filtered=bordroData.filter(b=>{if(bAP==="A"&&b.emp.durum==="K")return false;if(bAP==="P"&&b.emp.durum!=="K")return false;if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
     const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
     function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
@@ -1061,6 +1067,10 @@ function App(){
           </div>}
         </div>
         <select value={bKalanF} onChange={e=>setBKalanF(e.target.value)} style={{width:160}}><option value="">Kalan: Tümü</option><option value="ust">|Kalan| &gt; 50 ₺</option><option value="alt">|Kalan| ≤ 50 ₺</option></select>
+        <div style={{display:"inline-flex",border:"1px solid "+C.brd,borderRadius:6,overflow:"hidden"}}>
+          <button onClick={()=>setBAP("A")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:bAP==="A"?C.teal:"#fff",color:bAP==="A"?"#fff":C.sec,fontWeight:600,fontSize:12}}>Aktif</button>
+          <button onClick={()=>setBAP("P")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:bAP==="P"?C.red:"#fff",color:bAP==="P"?"#fff":C.sec,fontWeight:600,fontSize:12,borderLeft:"1px solid "+C.brd}}>Pasif</button>
+        </div>
         <div style={{flex:1}}/>
         <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn>
         <BtnO onClick={async()=>{
@@ -1256,11 +1266,13 @@ function App(){
     const [yiFirma,setYiFirma]=useState("");
     const [yiSube,setYiSube]=useState("");
     const [yiDurum,setYiDurum]=useState("");
+    const [yiAP,setYiAP]=useState("A"); /* A=Aktif (default), P=Pasif */
     const curYear=new Date().getFullYear();
     const years=[];for(let y=curYear;y>=2022;y--)years.push(y);
     const otherYears=years.slice(1); /* en yeni hariç */
     const emps=filteredSortedEmps.filter(e=>{
-      if(e.durum==="K")return false;
+      if(yiAP==="A"&&e.durum==="K")return false;
+      if(yiAP==="P"&&e.durum!=="K")return false;
       if(yiSearch&&!e.name.toLocaleLowerCase("tr").includes(yiSearch.toLocaleLowerCase("tr")))return false;
       if(yiFirma&&e.firma!==yiFirma)return false;
       if(yiSube&&e.sube!==yiSube)return false;
@@ -1295,9 +1307,13 @@ function App(){
         <select value={yiFirma} onChange={e=>{setYiFirma(e.target.value);setYiSube("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f}>{f}</option>)}</select>
         <select value={yiSube} onChange={e=>setYiSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(yiFirma?getFirmaSubs(yiFirma):allSubs).map(s=><option key={s}>{s}</option>)}</select>
         <select value={yiDurum} onChange={e=>setYiDurum(e.target.value)} style={{width:140}}><option value="">Tüm Durumlar</option>{D.durumlar.filter(d=>d!=="K").map(d=><option key={d}>{d}</option>)}</select>
+        <div style={{display:"inline-flex",border:"1px solid "+C.brd,borderRadius:6,overflow:"hidden"}}>
+          <button onClick={()=>setYiAP("A")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:yiAP==="A"?C.teal:"#fff",color:yiAP==="A"?"#fff":C.sec,fontWeight:600,fontSize:12}}>Aktif</button>
+          <button onClick={()=>setYiAP("P")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:yiAP==="P"?C.red:"#fff",color:yiAP==="P"?"#fff":C.sec,fontWeight:600,fontSize:12,borderLeft:"1px solid "+C.brd}}>Pasif</button>
+        </div>
         <div style={{flex:1}}/>
         <span style={{fontSize:12,color:C.sec}}>{emps.length} personel</span>
-        <span onClick={()=>{setYiSearch("");setYiFirma("");setYiSube("");setYiDurum("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+        <span onClick={()=>{setYiSearch("");setYiFirma("");setYiSube("");setYiDurum("");setYiAP("A");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
       </div>
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto",maxHeight:"calc(100vh - 340px)"}}>
         <table style={{minWidth:1200}}><thead><tr>
@@ -1406,7 +1422,7 @@ function App(){
       else if(code==="CLEAR"){setDb(p=>{const nc={...p.puantajCells};delete nc[key];const ns={...p.puantajSaat};delete ns[key];const nn={...p.puantajNotes};delete nn[key];return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};},addLog("Puantaj",eName+" Gün "+day+" → Temizlendi"));}
       else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
       setSelCell(null);}
-    const filtered=filteredSortedEmps.filter(emp=>{if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLocaleLowerCase("tr").includes(ptSearch.toLocaleLowerCase("tr")))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
+    const filtered=filteredSortedEmps.filter(emp=>{if(ptAP==="A"&&emp.durum==="K")return false;if(ptAP==="P"&&emp.durum!=="K")return false;if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLocaleLowerCase("tr").includes(ptSearch.toLocaleLowerCase("tr")))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
     const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],[".","Ayrıldı","#991b1b"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
 
     function handleBulkApply(){
@@ -1466,9 +1482,13 @@ function App(){
             </div>
           </div>}
         </div>
+        <div style={{display:"inline-flex",border:"1px solid "+C.brd,borderRadius:6,overflow:"hidden"}}>
+          <button onClick={()=>setPtAP("A")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:ptAP==="A"?C.teal:"#fff",color:ptAP==="A"?"#fff":C.sec,fontWeight:600,fontSize:12}}>Aktif</button>
+          <button onClick={()=>setPtAP("P")} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:ptAP==="P"?C.red:"#fff",color:ptAP==="P"?"#fff":C.sec,fontWeight:600,fontSize:12,borderLeft:"1px solid "+C.brd}}>Pasif</button>
+        </div>
         <div style={{flex:1}}/>
         {can("degistir","puantaj")&&<Btn bg={C.pur} onClick={()=>setBulkPt({...bulkPt,show:!bulkPt.show})} style={{fontSize:12,padding:"8px 16px"}}>{bulkPt.show?"▲ Toplu Giriş":"▼ Toplu Giriş"}</Btn>}
-        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn><span onClick={()=>{setPtSearch("");setPtF("");setPtS("");setPtDs([]);setPtDurDrop(false);if(ptSearchRef.current)ptSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Filtreyi Temizle</span>
+        <Btn onClick={handlePrint}><IcPrint/> Yazdır</Btn><span onClick={()=>{setPtSearch("");setPtF("");setPtS("");setPtDs([]);setPtDurDrop(false);setPtAP("A");if(ptSearchRef.current)ptSearchRef.current.value="";}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Filtreyi Temizle</span>
       </div>
       {/* TOPLU GİRİŞ PANELİ */}
       {bulkPt.show&&<div style={{background:C.card,borderRadius:12,padding:"18px 24px",marginBottom:12,border:"2px solid "+C.pur}}>
