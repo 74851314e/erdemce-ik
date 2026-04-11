@@ -1233,50 +1233,78 @@ function App(){
   /* YILLIK İZİN */
   function YillikIzinPage(){
     const [hoverInfo,setHoverInfo]=useState(null);
+    const [yiSearch,setYiSearch]=useState("");
+    const [yiFirma,setYiFirma]=useState("");
+    const [yiSube,setYiSube]=useState("");
+    const [yiDurum,setYiDurum]=useState("");
     const curYear=new Date().getFullYear();
     const years=[];for(let y=curYear;y>=2022;y--)years.push(y);
-    const emps=filteredSortedEmps.filter(e=>e.durum!=="K").sort((a,b)=>a.name.localeCompare(b.name,"tr"));
+    const otherYears=years.slice(1); /* en yeni hariç */
+    const emps=filteredSortedEmps.filter(e=>{
+      if(e.durum==="K")return false;
+      if(yiSearch&&!e.name.toLocaleLowerCase("tr").includes(yiSearch.toLocaleLowerCase("tr")))return false;
+      if(yiFirma&&e.firma!==yiFirma)return false;
+      if(yiSube&&e.sube!==yiSube)return false;
+      if(yiDurum&&e.durum!==yiDurum)return false;
+      return true;
+    }).sort((a,b)=>a.name.localeCompare(b.name,"tr"));
     function getHak(eid,y){return Number(D.yillikIzinHak[eid+"|"+y])||0;}
     function setHak(eid,y,v){const n=Number(v)||0;setDb(p=>({...p,yillikIzinHak:{...p.yillikIzinHak,[eid+"|"+y]:n}}),addLog("Yıllık İzin Hak Güncellendi",empName(eid)+" "+y+" → "+n+" gün"));}
     function getKullanilan(eid,y){return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y)).reduce((s,l)=>s+(l.days||0),0);}
     function getKullanilanLeaves(eid,y){return D.leaves.filter(l=>l.empId===eid&&l.type==="Yİ"&&String(l.yil)===String(y));}
     function getKalan(eid,y){return getHak(eid,y)-getKullanilan(eid,y);}
+    function YearCells({e,y}){
+      const hak=getHak(e.id,y);const kul=getKullanilan(e.id,y);const kal=hak-kul;
+      const isCur=y===curYear;
+      return <React.Fragment>
+        <td style={{textAlign:"center",padding:"2px",borderLeft:"2px solid "+C.brd,background:isCur?"#eff6ff":"transparent"}}>
+          {can("degistir","yillikizin")?<input type="number" defaultValue={hak||""} onBlur={ev=>{const v=Number(ev.target.value)||0;if(v!==hak)setHak(e.id,y,v);}} style={{width:50,padding:"4px",fontSize:12,textAlign:"center",border:"1px solid #e5e7eb",borderRadius:4,background:"#fefce8"}}/>:<span style={{fontSize:12}}>{hak||"-"}</span>}
+        </td>
+        <td onMouseEnter={ev=>{const list=getKullanilanLeaves(e.id,y);if(list.length>0)setHoverInfo({list,emp:e.name,x:ev.clientX+12,y:ev.clientY+12});}} onMouseMove={ev=>setHoverInfo(h=>h?{...h,x:ev.clientX+12,y:ev.clientY+12}:null)} onMouseLeave={()=>setHoverInfo(null)} style={{textAlign:"center",fontSize:12,fontWeight:600,padding:"6px 4px",cursor:kul>0?"help":"default",color:kul>0?C.red:C.sec,background:isCur?"#eff6ff":"transparent"}}>{kul||"-"}</td>
+        <td style={{textAlign:"center",fontSize:12,fontWeight:700,padding:"6px 4px",color:kal<0?C.red:kal>0?C.grn:C.sec,background:isCur?"#eff6ff":"transparent"}}>{kal||"-"}</td>
+      </React.Fragment>;
+    }
     return <div><Header icon={<IcDoc/>} title="Yıllık İzin" sub="Hakediş, kullanılan ve kalan yıllık izinler"/>
       <div style={{background:"#eff6ff",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.blu}}>
         <strong>Bilgi:</strong> Hakedilen alanına elle giriş yapın. Kullanılan otomatik olarak İzin Formları'ndaki <strong>Yİ</strong> kayıtlarından gelir (her Yİ kaydında "Hangi Yılın?" alanı doldurulmalıdır). Kullanılan üzerine fare ile gelince detay görürsünüz.
       </div>
-      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto",maxHeight:"calc(100vh - 280px)"}}>
+      {/* SÜZME */}
+      <div style={{background:C.card,borderRadius:12,padding:"14px 20px",marginBottom:12,display:"flex",alignItems:"center",gap:12,border:"1px solid "+C.cardBrd,flexWrap:"wrap"}}>
+        <IcFilter/>
+        <input placeholder="Ara (Adı Soyadı)..." value={yiSearch} onChange={e=>setYiSearch(e.target.value)} style={{width:200}}/>
+        <select value={yiFirma} onChange={e=>{setYiFirma(e.target.value);setYiSube("");}} style={{width:160}}><option value="">Tüm Firmalar</option>{userFirms.map(f=><option key={f}>{f}</option>)}</select>
+        <select value={yiSube} onChange={e=>setYiSube(e.target.value)} style={{width:160}}><option value="">Tüm Şubeler</option>{(yiFirma?getFirmaSubs(yiFirma):allSubs).map(s=><option key={s}>{s}</option>)}</select>
+        <select value={yiDurum} onChange={e=>setYiDurum(e.target.value)} style={{width:140}}><option value="">Tüm Durumlar</option>{D.durumlar.filter(d=>d!=="K").map(d=><option key={d}>{d}</option>)}</select>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:12,color:C.sec}}>{emps.length} personel</span>
+        <span onClick={()=>{setYiSearch("");setYiFirma("");setYiSube("");setYiDurum("");}} style={{color:C.teal,fontWeight:600,fontSize:13,cursor:"pointer"}}>Temizle</span>
+      </div>
+      <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto",maxHeight:"calc(100vh - 340px)"}}>
         <table style={{minWidth:1200}}><thead><tr>
-          <th style={{...thS,position:"sticky",left:0,background:"#f8fafb",zIndex:2,minWidth:200,textAlign:"left"}}>ADI SOYADI</th>
-          {years.map(y=><th key={y} colSpan={3} style={{...thS,textAlign:"center",background:y===curYear?"#dbeafe":"#f8fafb",borderLeft:"2px solid "+C.brd,fontSize:12}}>{y}</th>)}
-          <th style={{...thS,textAlign:"center",background:"#fef3c7",minWidth:90,borderLeft:"2px solid "+C.brd}}>İZİN T.</th>
-          <th style={{...thS,textAlign:"center",background:"#dcfce7",minWidth:90}}>GEN İZİN T.</th>
+          <th rowSpan={2} style={{...thS,position:"sticky",left:0,background:"#f8fafb",zIndex:2,minWidth:200,textAlign:"left",verticalAlign:"middle"}}>ADI SOYADI</th>
+          <th rowSpan={2} style={{...thS,textAlign:"center",background:"#dcfce7",minWidth:90,verticalAlign:"middle",borderLeft:"2px solid "+C.brd}}>GEN İZİN T.</th>
+          <th rowSpan={2} style={{...thS,textAlign:"center",background:"#fef3c7",minWidth:90,verticalAlign:"middle",borderLeft:"2px solid "+C.brd}}>İZİN T.</th>
+          <th colSpan={3} style={{...thS,textAlign:"center",background:"#dbeafe",borderLeft:"2px solid "+C.brd,fontSize:12}}>{curYear}</th>
+          {otherYears.map(y=><th key={y} colSpan={3} style={{...thS,textAlign:"center",background:"#f8fafb",borderLeft:"2px solid "+C.brd,fontSize:12}}>{y}</th>)}
         </tr><tr>
-          <th style={{...thS,position:"sticky",left:0,background:"#f8fafb",zIndex:2}}></th>
-          {years.map(y=><React.Fragment key={y}>
-            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:y===curYear?"#dbeafe":"#f8fafb",borderLeft:"2px solid "+C.brd,minWidth:60}}>HAK</th>
-            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:y===curYear?"#dbeafe":"#f8fafb",minWidth:60}}>KUL</th>
-            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:y===curYear?"#dbeafe":"#f8fafb",minWidth:60}}>KAL</th>
+          <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#dbeafe",borderLeft:"2px solid "+C.brd,minWidth:60}}>HAK</th>
+          <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#dbeafe",minWidth:60}}>KUL</th>
+          <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#dbeafe",minWidth:60}}>KAL</th>
+          {otherYears.map(y=><React.Fragment key={y}>
+            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#f8fafb",borderLeft:"2px solid "+C.brd,minWidth:60}}>HAK</th>
+            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#f8fafb",minWidth:60}}>KUL</th>
+            <th style={{...thS,textAlign:"center",fontSize:10,padding:"4px",background:"#f8fafb",minWidth:60}}>KAL</th>
           </React.Fragment>)}
-          <th style={{...thS,borderLeft:"2px solid "+C.brd}}></th><th style={thS}></th>
         </tr></thead>
         <tbody>{emps.map(e=>{
           let izinT=0,genIzinT=0;
           years.forEach((y,i)=>{const k=getKalan(e.id,y);genIzinT+=k;if(i>0)izinT+=k;});
           return <tr key={e.id}>
             <td style={{padding:"8px 12px",fontSize:12,fontWeight:600,position:"sticky",left:0,background:"#fff",zIndex:1,whiteSpace:"nowrap",borderRight:"1px solid "+C.brd}}>{e.name}</td>
-            {years.map(y=>{
-              const hak=getHak(e.id,y);const kul=getKullanilan(e.id,y);const kal=hak-kul;
-              return <React.Fragment key={y}>
-                <td style={{textAlign:"center",padding:"2px",borderLeft:"2px solid "+C.brd}}>
-                  {can("degistir","yillikizin")?<input type="number" defaultValue={hak||""} onBlur={ev=>{const v=Number(ev.target.value)||0;if(v!==hak)setHak(e.id,y,v);}} style={{width:50,padding:"4px",fontSize:12,textAlign:"center",border:"1px solid #e5e7eb",borderRadius:4,background:"#fefce8"}}/>:<span style={{fontSize:12}}>{hak||"-"}</span>}
-                </td>
-                <td onMouseEnter={ev=>{const list=getKullanilanLeaves(e.id,y);if(list.length>0)setHoverInfo({list,emp:e.name,x:ev.clientX+12,y:ev.clientY+12});}} onMouseMove={ev=>setHoverInfo(h=>h?{...h,x:ev.clientX+12,y:ev.clientY+12}:null)} onMouseLeave={()=>setHoverInfo(null)} style={{textAlign:"center",fontSize:12,fontWeight:600,padding:"6px 4px",cursor:kul>0?"help":"default",color:kul>0?C.red:C.sec}}>{kul||"-"}</td>
-                <td style={{textAlign:"center",fontSize:12,fontWeight:700,padding:"6px 4px",color:kal<0?C.red:kal>0?C.grn:C.sec}}>{kal||"-"}</td>
-              </React.Fragment>;
-            })}
+            <td style={{textAlign:"center",fontSize:13,fontWeight:800,background:"#dcfce7",borderLeft:"2px solid "+C.brd,padding:"6px 4px",color:C.grn}}>{genIzinT||"-"}</td>
             <td style={{textAlign:"center",fontSize:13,fontWeight:800,background:"#fef3c7",borderLeft:"2px solid "+C.brd,padding:"6px 4px"}}>{izinT||"-"}</td>
-            <td style={{textAlign:"center",fontSize:13,fontWeight:800,background:"#dcfce7",padding:"6px 4px",color:C.grn}}>{genIzinT||"-"}</td>
+            <YearCells e={e} y={curYear}/>
+            {otherYears.map(y=><YearCells key={y} e={e} y={y}/>)}
           </tr>;
         })}</tbody></table>
         {emps.length===0&&<div style={{padding:30,textAlign:"center",color:C.mut}}>Personel bulunamadı</div>}
