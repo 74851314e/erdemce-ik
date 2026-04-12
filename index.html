@@ -278,6 +278,9 @@ function App(){
       if(_saving)return;
       if(Date.now()-lastLocalChange.current<5000)return; /* Son değişiklikten 5sn geçmeden çekme */
       if(_changedKeys.size>0)return; /* Bekleyen yerel değişiklik varsa çekme */
+      /* Kullanıcı bir input/textarea/select'e odaklıysa polling'i atla — yazma kesintiye uğramasın */
+      const ae=document.activeElement;
+      if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"||ae.tagName==="SELECT"||ae.isContentEditable))return;
       fetch("/api/data").then(r=>r.json()).then(data=>{
         if(data&&Object.keys(data).length>0){
           setDbRaw(prev=>{
