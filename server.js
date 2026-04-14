@@ -119,9 +119,9 @@ async function checkAdmin(req) {
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let body = "";
-    req.on("data", c => body += c);
-    req.on("end", () => resolve(body));
+    const chunks = [];
+    req.on("data", c => chunks.push(c));
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     req.on("error", reject);
   });
 }
@@ -180,26 +180,27 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/api/data") {
     try {
       const data = await loadData();
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify(data));
     } catch (e) {
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end("{}");
     }
     return;
   }
 
   if (req.method === "POST" && pathname === "/api/data") {
-    let body = "";
-    req.on("data", chunk => (body += chunk));
+    const chunks = [];
+    req.on("data", chunk => chunks.push(chunk));
     req.on("end", async () => {
       try {
+        const body = Buffer.concat(chunks).toString("utf8");
         const parsed = JSON.parse(body);
         await saveData(parsed);
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end('{"ok":true}');
       } catch (e) {
-        res.writeHead(400, { "Content-Type": "application/json" });
+        res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
         res.end('{"error":"Hata"}');
       }
     });
