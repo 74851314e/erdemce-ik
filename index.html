@@ -382,7 +382,15 @@ function App(){
     if(emp.istenCikis&&emp.istenCikis<pStart)return false;
     return true;
   }
-  const periodActiveEmps=filteredActiveEmps.filter(isEmpInPeriod);
+  /* K durumundaki personel sadece çıkış tarihini içeren döneme kadar bordroda görünür */
+  const periodActiveEmps=filteredSortedEmps.filter(e=>{
+    if(e.durum==="K"){
+      /* K durumunda olan personel: çıkış tarihi yoksa gözükmez, varsa o döneme kadar gözükür */
+      if(!e.istenCikis)return false;
+      return isEmpInPeriod(e);
+    }
+    return isEmpInPeriod(e);
+  });
 
   /* PUANTAJ HELPERS — DİNAMİK DÖNEM */
   const now=new Date();
