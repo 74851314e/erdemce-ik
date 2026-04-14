@@ -961,6 +961,8 @@ function App(){
   /* BORDRO */
   function BordroPage(){
     const [hoverFoto,setHoverFoto]=useState(null);
+    const [noteEditor,setNoteEditor]=useState(null); /* {empId, name, value} */
+    const [hoverNote,setHoverNote]=useState(null);
     const bSearchRef=useRef();
     const filtered=bordroData.filter(b=>{if(bAP==="A"&&b.emp.durum==="K")return false;if(bAP==="P"&&b.emp.durum!=="K")return false;if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
     const [kasaTutar,setKasaTutar]=useState("");
@@ -1182,7 +1184,14 @@ function App(){
               const locked=isEmpKapali(b.emp);
               const mi={...minI,background:locked?"#f3f4f6":"#fefce8"};
               return <tr key={b.emp.id} className={rowCls} style={{borderBottom:"1px solid "+C.brdLt,background:locked?"#f9fafb":rc}}>
-              <td onMouseEnter={e=>{if(b.emp.foto)setHoverFoto({foto:b.emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(b.emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{b.emp.name}</td>
+              <td onMouseEnter={e=>{
+                if(b.emp.foto)setHoverFoto({foto:b.emp.foto,x:e.clientX+12,y:e.clientY+12});
+                const note=(m.not||"").trim();
+                if(note)setHoverNote({text:note,name:b.emp.name,x:e.clientX+12,y:e.clientY+12});
+              }} onMouseMove={e=>{
+                if(b.emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);
+                setHoverNote(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);
+              }} onMouseLeave={()=>{setHoverFoto(null);setHoverNote(null);}} onDoubleClick={()=>{if(!locked&&can("degistir","bordro"))setNoteEditor({empId:b.emp.id,name:b.emp.name,value:m.not||""});}} style={{padding:"8px 12px",fontSize:12,fontWeight:600,whiteSpace:"nowrap",cursor:locked?"default":"pointer"}} title={locked?"":"Çift tıkla: Not ekle/düzenle"}>{locked&&<span style={{color:C.red,marginRight:4}} title="Dönem kapalı">🔒</span>}{b.emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{(m.not||"").trim()&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"#f59e0b",marginRight:5}} title="Not var"/>}{b.emp.name}</td>
               <td style={{...tc,padding:"4px 2px"}}><span style={{display:"inline-block",padding:"2px 6px",borderRadius:4,background:db.bg,color:db.cl,fontSize:10,fontWeight:700}}>{b.emp.durum}</span></td>
               <td style={{...tc,color:C.sec}}>{getEmpIzin(b.emp)}</td>
               <td style={tc}>{fmt(b.maas)}</td>
@@ -1216,6 +1225,21 @@ function App(){
         <strong>Formüller:</strong> Günlük=Maaş/30 | Saat Ücreti=Günlük/7,5 | Mesai T.=(Saat×SaatÜcr)+(Mesai×Günlük)+(FM×Günlük)+(RT×Günlük)+(Dİ×Günlük) | Maaş T.=Maaş+Yol+Mesai T. | Yatan=Banka−Bes−Avans1−KesEkl | Elden=Maaş T.−Banka | Kalan=Elden+Devir+Avans2+Ürün+Ödenen
       </div>
       {hoverFoto&&<div style={{position:"fixed",left:hoverFoto.x,top:hoverFoto.y,width:150,height:180,borderRadius:8,border:"2px solid "+C.teal,boxShadow:"0 6px 20px rgba(0,0,0,.35)",zIndex:200,pointerEvents:"none",overflow:"hidden",background:"#fff"}}><img src={hoverFoto.foto} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>}
+      {hoverNote&&<div style={{position:"fixed",left:hoverNote.x+170,top:hoverNote.y,maxWidth:300,background:"#fffbeb",border:"2px solid #f59e0b",borderRadius:8,padding:"10px 14px",boxShadow:"0 6px 20px rgba(0,0,0,.3)",zIndex:201,pointerEvents:"none",fontSize:12}}>
+        <div style={{fontWeight:700,marginBottom:4,color:"#b45309"}}>📝 {hoverNote.name}</div>
+        <div style={{whiteSpace:"pre-wrap",color:C.txt}}>{hoverNote.text}</div>
+      </div>}
+      {noteEditor&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:500}} onClick={()=>setNoteEditor(null)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,padding:"24px 28px",minWidth:400,maxWidth:500,boxShadow:"0 20px 60px rgba(0,0,0,.4)"}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>📝 Not Düzenle</div>
+          <div style={{fontSize:12,color:C.sec,marginBottom:12}}>{noteEditor.name} — {donemLabel}</div>
+          <textarea autoFocus defaultValue={noteEditor.value} onChange={e=>{noteEditor.value=e.target.value;}} placeholder="Bu personel için not yazın..." style={{width:"100%",minHeight:120,padding:"10px 12px",fontSize:13,border:"1.5px solid "+C.brd,borderRadius:8,fontFamily:"inherit",resize:"vertical"}}/>
+          <div style={{display:"flex",gap:10,marginTop:16,justifyContent:"flex-end"}}>
+            <Btn bg="#6b7280" onClick={()=>setNoteEditor(null)}><IcX/> İptal</Btn>
+            <Btn bg={C.blu} onClick={()=>{setManual(noteEditor.empId,"not",noteEditor.value);setNoteEditor(null);}}><IcSave/> Kaydet</Btn>
+          </div>
+        </div>
+      </div>}
     </div>;
   }
 
@@ -1536,7 +1560,7 @@ function App(){
       {selCell&&<div onClick={()=>setSelCell(null)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.25)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}}><div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,padding:"20px 24px",boxShadow:"0 12px 40px rgba(0,0,0,.2)",minWidth:300}}><div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Kod Seç</div><div style={{fontSize:12,color:C.sec,marginBottom:6}}>{empName(selCell.empId)} — {selCell.day} {months[pMonth]}</div>{D.puantajNotes[pKey(selCell.empId,selCell.day)]&&<div style={{fontSize:11,color:C.orange,marginBottom:10,padding:"6px 10px",background:"#fff7ed",borderRadius:6,border:"1px solid #fed7aa"}}>📝 {D.puantajNotes[pKey(selCell.empId,selCell.day)]}</div>}<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>{CODES.map(({c,l,bg,cl})=><button key={c} onClick={()=>handleCode(c)} style={{padding:"8px 4px",borderRadius:8,border:"none",background:bg,color:cl,fontSize:12,fontWeight:700,cursor:"pointer",textAlign:"center"}}><div>{c}</div><div style={{fontSize:9,fontWeight:500,marginTop:2}}>{l}</div></button>)}<button onClick={()=>handleCode("CLEAR")} style={{padding:"8px 4px",borderRadius:8,border:"1px solid #e5e7eb",background:"#f9fafb",color:"#6b7280",fontSize:12,fontWeight:700,cursor:"pointer",textAlign:"center"}}><div>⌫</div><div style={{fontSize:9,fontWeight:500,marginTop:2}}>Temizle</div></button></div></div></div>}
       <div style={{background:C.card,borderRadius:12,border:"1px solid "+C.cardBrd,overflow:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:1400}}><thead><tr>
-          <th style={{...thS,position:"sticky",left:0,zIndex:3,minWidth:150,background:"#f8fafb"}}>PERSONEL</th><th style={{...thS,minWidth:80}}>FİRMA</th><th style={{...thS,textAlign:"center",minWidth:70}}>İZİN GÜNÜ</th>
+          <th style={{...thS,position:"sticky",left:0,zIndex:3,minWidth:150,background:"#f8fafb"}}>PERSONEL</th><th style={{...thS,minWidth:80}}>GÖREV</th><th style={{...thS,textAlign:"center",minWidth:70}}>İZİN GÜNÜ</th>
           {Array.from({length:pDays},(_,i)=>{const d=i+1;const rtDay=isHolidayDay(d);const locked=!canEditDay(d);return <th key={i} style={{...thS,textAlign:"center",minWidth:30,padding:"4px 1px",background:rtDay?"#dbeafe":locked?"#f1f1f1":"#f8fafb",color:rtDay?"#2563eb":locked?"#bbb":C.sec}}><div style={{fontSize:10}}>{d}</div><div style={{fontSize:8,fontWeight:400}}>{dayA[i]}</div></th>;})}
           <th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:35}}>SAAT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:45}}>MESAİ</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:30}}>FM</th><th style={{...thS,textAlign:"center",background:"#dbeafe",minWidth:30}}>RT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:25}}>Yİ</th><th style={{...thS,textAlign:"center",background:"#fef2f2",minWidth:35}}>Dİ</th>
         </tr></thead><tbody>
@@ -1545,7 +1569,7 @@ function App(){
             const stickyBg=rowBg==="transparent"?"#fff":rowBg;
             return <tr key={emp.id} style={{borderBottom:"1px solid "+C.brdLt,background:rowBg}}>
               <td onMouseEnter={e=>{if(emp.foto)setHoverFoto({foto:emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{emp.name}</td>
-              <td style={{...tdS,color:C.sec,fontSize:12}}>{emp.firma}</td>
+              <td style={{...tdS,color:C.sec,fontSize:12}}>{emp.gorev}</td>
               <td style={{...tdS,color:C.sec,fontSize:12,textAlign:"center"}}>{getEmpIzin(emp)}</td>
               {Array.from({length:pDays},(_,di)=>{const day=di+1;const code=getCellCode(emp.id,day);const izin=isIzinDay(emp,day);const isRT=isHolidayDay(day);const cs=codeStyle(code);
                 let bg,bd,cl;
