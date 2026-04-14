@@ -382,12 +382,15 @@ function App(){
     if(emp.istenCikis&&emp.istenCikis<pStart)return false;
     return true;
   }
-  /* K durumundaki personel sadece çıkış tarihini içeren döneme kadar bordroda görünür */
+  /* Tüm personeller bordroData'ya girer (K dahil), aktif/pasif filtresi sonra yapılır */
   const periodActiveEmps=filteredSortedEmps.filter(e=>{
+    /* K durumunda olan personel: çıkış tarihi yoksa hiç gözükmez */
+    if(e.durum==="K"&&!e.istenCikis)return false;
+    /* K ise sadece çıkış tarihini içeren veya önceki dönemler için gözükür */
     if(e.durum==="K"){
-      /* K durumunda olan personel: çıkış tarihi yoksa gözükmez, varsa o döneme kadar gözükür */
-      if(!e.istenCikis)return false;
-      return isEmpInPeriod(e);
+      const pStart=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
+      /* İşten çıkış bu dönemden önceyse yine de bir kere gözüksün (pasif için) */
+      return true;
     }
     return isEmpInPeriod(e);
   });
@@ -972,7 +975,23 @@ function App(){
     const [noteEditor,setNoteEditor]=useState(null); /* {empId, name, value} */
     const [hoverNote,setHoverNote]=useState(null);
     const bSearchRef=useRef();
-    const filtered=bordroData.filter(b=>{if(bAP==="A"&&b.emp.durum==="K")return false;if(bAP==="P"&&b.emp.durum!=="K")return false;if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;if(bFirma&&b.emp.firma!==bFirma)return false;if(bSube&&b.emp.sube!==bSube)return false;if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;return true;});
+    const filtered=bordroData.filter(b=>{
+      if(bAP==="A"&&b.emp.durum==="K"){
+        /* K durumundaki personel: çıkış tarihi bu dönemdeyse göster */
+        if(!b.emp.istenCikis)return false;
+        const pEndStr=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(pDays).padStart(2,"0");
+        const pStartStr=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
+        if(b.emp.istenCikis<pStartStr)return false;
+      }
+      if(bAP==="P"&&b.emp.durum!=="K")return false;
+      if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;
+      if(bFirma&&b.emp.firma!==bFirma)return false;
+      if(bSube&&b.emp.sube!==bSube)return false;
+      if(bDs.length>0&&!bDs.includes(b.emp.durum))return false;
+      if(bKalanF==="ust"&&Math.abs(b.kalan)<=50)return false;
+      if(bKalanF==="alt"&&Math.abs(b.kalan)>50)return false;
+      return true;
+    });
     const [kasaTutar,setKasaTutar]=useState("");
     const kasaKupurler=D.kasaKupurler||[200,100,50,20,10,5];
     function setKupur(i,val){const n=[...kasaKupurler];n[i]=Number(val)||0;setDb(p=>({...p,kasaKupurler:n}));}
