@@ -341,7 +341,9 @@ function App(){
     prevUserRef.current=curUser;
   },[curUser]);
   const sortedEmps=useMemo(()=>[...D.employees].sort((a,b)=>a.name.localeCompare(b.name,"tr")),[D.employees]);
-  const activeEmps=sortedEmps.filter(e=>e.durum!=="K");
+  /* Pasif = İşten çıkış tarihi girilmiş personel (durum kodundan bağımsız) */
+  function isPasif(emp){return !!(emp&&emp.istenCikis&&String(emp.istenCikis).trim());}
+  const activeEmps=sortedEmps.filter(e=>!isPasif(e));
   const empName=(id)=>{const e=D.employees.find(x=>x.id===id);return e?e.name:"?";};
 
   /* PERMISSIONS */
@@ -373,25 +375,31 @@ function App(){
     return us.length>0?allSubs.filter(s=>us.includes(s)):allSubs;
   },[allSubs,curUser]);
   const filteredSortedEmps=useMemo(()=>sortedEmps.filter(canAccessEmp),[sortedEmps,curUser]);
-  const filteredActiveEmps=filteredSortedEmps.filter(e=>e.durum!=="K");
+  const filteredActiveEmps=filteredSortedEmps.filter(e=>!isPasif(e));
   /* Dönem bazlı filtreleme: İşe giriş/çıkış tarihine göre */
+  /* Tarih normalizasyonu — farklı formatları YYYY-MM-DD'ye çevirir */
+  function normalizeDate(d){
+    if(!d)return "";
+    const s=String(d).trim();
+    if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+    /* DD.MM.YYYY veya DD/MM/YYYY */
+    const m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+    if(m)return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
+    return s;
+  }
   function isEmpInPeriod(emp){
     const pEnd=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(pDays).padStart(2,"0");
     const pStart=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
-    if(emp.iseGiris&&emp.iseGiris>pEnd)return false;
-    if(emp.istenCikis&&emp.istenCikis<pStart)return false;
+    const giris=normalizeDate(emp.iseGiris);
+    const cikis=normalizeDate(emp.istenCikis);
+    if(giris&&giris>pEnd)return false;
+    if(cikis&&cikis<pStart)return false;
     return true;
   }
-  /* Tüm personeller bordroData'ya girer (K dahil), aktif/pasif filtresi sonra yapılır */
+  /* Tüm personeller bordroData'ya girer, aktif/pasif filtresi sonra yapılır */
   const periodActiveEmps=filteredSortedEmps.filter(e=>{
-    /* K durumunda olan personel: çıkış tarihi yoksa hiç gözükmez */
-    if(e.durum==="K"&&!e.istenCikis)return false;
-    /* K ise sadece çıkış tarihini içeren veya önceki dönemler için gözükür */
-    if(e.durum==="K"){
-      const pStart=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
-      /* İşten çıkış bu dönemden önceyse yine de bir kere gözüksün (pasif için) */
-      return true;
-    }
+    /* Pasif personel her dönem bordroData'ya girer, filtre aşamasında Aktif/Pasif karar verilir */
+    if(isPasif(e))return true;
     return isEmpInPeriod(e);
   });
 
@@ -702,8 +710,8 @@ function App(){
 
     const pSearchRef=useRef();
     const filteredEmps=filteredSortedEmps.filter(e=>{
-      if(pAP==="A"&&e.durum==="K")return false;
-      if(pAP==="P"&&e.durum!=="K")return false;
+      if(pAP==="A"&&isPasif(e))return false;
+      if(pAP==="P"&&!isPasif(e))return false;
       if(pSearch&&!e.name.toLocaleLowerCase("tr").includes(pSearch.toLocaleLowerCase("tr")))return false;
       if(pFirma&&e.firma!==pFirma)return false;
       if(pSube&&e.sube!==pSube)return false;
@@ -871,7 +879,7 @@ function App(){
           {can("degistir")&&<th style={{...thS,width:36,textAlign:"center"}}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{width:"auto",cursor:"pointer"}}/></th>}
           {["Ad Soyad","Görev","Firma","Şube","Maaş","İzin","Kıdem T.","D.Günü","Cep Tel","Durum","İşlem"].map(h=><th key={h} style={thS}>{h}</th>)}
         </tr></thead>
-        <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":e.durum==="K"?"#f3e8ff":"transparent";return <tr key={e.id} onDoubleClick={()=>{if(can("degistir"))loadEmpEdit(e);}} style={{background:rBg,cursor:can("degistir")?"pointer":"default"}}>
+        <tbody>{filteredEmps.map(e=>{const rBg=selected[e.id]?"#eff6ff":editId===e.id?"#dbeafe":e.durum==="E"?"#ecfdf5":e.durum==="."?"#fefce8":isPasif(e)?"#f3e8ff":"transparent";return <tr key={e.id} onDoubleClick={()=>{if(can("degistir"))loadEmpEdit(e);}} style={{background:rBg,cursor:can("degistir")?"pointer":"default"}}>
           {can("degistir")&&<td style={{...tdS,textAlign:"center",width:36}}><input type="checkbox" checked={!!selected[e.id]} onChange={()=>toggleOne(e.id)} style={{width:"auto",cursor:"pointer"}}/></td>}
           <td style={{...tdS,fontWeight:600}}>{e.name}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.gorev}</td>
@@ -882,7 +890,7 @@ function App(){
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.kidem||"-"}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.dogumGunu||"-"}</td>
           <td style={{...tdS,color:C.sec,fontSize:12}}>{e.cepTel||"-"}</td>
-          <td style={tdS}><Badge text={e.durum} bg={e.durum==="S"?"#f3f4f6":e.durum==="E"?C.grnBg:e.durum==="K"?"#ede9fe":C.yelBg} color={e.durum==="S"?C.sec:e.durum==="E"?C.grn:e.durum==="K"?C.pur:"#a16207"}/></td>
+          <td style={tdS}><Badge text={e.durum} bg={e.durum==="S"?"#f3f4f6":e.durum==="E"?C.grnBg:isPasif(e)?"#ede9fe":C.yelBg} color={e.durum==="S"?C.sec:e.durum==="E"?C.grn:isPasif(e)?C.pur:"#a16207"}/></td>
           <td style={tdS}><span style={{display:"inline-flex",gap:8}}>
             {can("degistir")&&<button onClick={()=>loadEmpEdit(e)} style={{background:"none",border:"none",cursor:"pointer"}}><IcEdit/></button>}
             {can("sil")&&<button onClick={()=>del(e.id)} style={{background:"none",border:"none",cursor:"pointer"}}><IcTrash/></button>}
@@ -976,14 +984,13 @@ function App(){
     const [hoverNote,setHoverNote]=useState(null);
     const bSearchRef=useRef();
     const filtered=bordroData.filter(b=>{
-      if(bAP==="A"&&b.emp.durum==="K"){
-        /* K durumundaki personel: çıkış tarihi bu dönemdeyse göster */
-        if(!b.emp.istenCikis)return false;
-        const pEndStr=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-"+String(pDays).padStart(2,"0");
+      if(bAP==="A"&&isPasif(b.emp)){
+        /* Pasif personel: çıkış tarihi bu dönemdeyse Aktif modda göster, önceki dönemlerse gizle */
+        const cikisNorm=normalizeDate(b.emp.istenCikis);
         const pStartStr=pYear+"-"+String(pMonth+1).padStart(2,"0")+"-01";
-        if(b.emp.istenCikis<pStartStr)return false;
+        if(cikisNorm<pStartStr)return false;
       }
-      if(bAP==="P"&&b.emp.durum!=="K")return false;
+      if(bAP==="P"&&!isPasif(b.emp))return false;
       if(bSearch&&!b.emp.name.toLocaleLowerCase("tr").includes(bSearch.toLocaleLowerCase("tr")))return false;
       if(bFirma&&b.emp.firma!==bFirma)return false;
       if(bSube&&b.emp.sube!==bSube)return false;
@@ -1011,7 +1018,7 @@ function App(){
       let rows="<tr class='tot'><td>GENEL TOPLAM:</td><td></td><td></td><td>"+fmt(tot.maas)+"</td><td class='blu'>"+tot.gun+"</td><td>"+fmt(tot.yol)+"</td><td>"+fe(tot.saat)+"</td><td>"+fe(tot.mesai)+"</td><td>"+fe(tot.fm)+"</td><td class='blu'>"+fe(tot.rt)+"</td><td style='color:#991b1b;font-weight:800'>"+fe(tot.di)+"</td><td>"+fe(tot.mesaiT)+"</td><td><b>"+fmt(tot.maasT)+"</b></td><td>"+fe(tot.banka)+"</td><td>"+fe(tot.bes)+"</td><td>"+fe(tot.a1)+"</td><td class='neg'>"+fn(tot.ke)+"</td><td class='neg'>"+(tot.yt!==0?fmt(tot.yt):"")+"</td><td class='pos'>"+fmt(tot.el)+"</td><td>"+fe(tot.dv)+"</td><td class='neg'>"+fe(tot.a2)+"</td><td class='neg'>"+fe(tot.ur)+"</td><td>"+fe(tot.od)+"</td><td><b>"+fmt(tot.kl)+"</b></td><td></td></tr>";
       filtered.forEach(b=>{
         const m=D.bordroManual[bKey(b.emp.id)]||{};
-        const rc=b.emp.durum==="E"?"re":b.emp.durum==="."?"rd":b.emp.durum==="K"?"rk":"";
+        const rc=b.emp.durum==="E"?"re":b.emp.durum==="."?"rd":isPasif(b.emp)?"rk":"";
         rows+="<tr"+(rc?" class='"+rc+"'":"")+">";
         rows+="<td><b>"+b.emp.name+"</b></td>";
         rows+="<td>"+b.emp.durum+"</td>";
@@ -1207,7 +1214,7 @@ function App(){
             {filtered.map(b=>{
               const rc=durumColor(b.emp);const db=durumBadge(b.emp);
               const m=D.bordroManual[bKey(b.emp.id)]||{};
-              const rowCls=b.emp.durum==="E"?"row-e":b.emp.durum==="."?"row-dot":b.emp.durum==="K"?"row-k":"";
+              const rowCls=b.emp.durum==="E"?"row-e":b.emp.durum==="."?"row-dot":isPasif(b.emp)?"row-k":"";
               const locked=isEmpKapali(b.emp);
               const mi={...minI,background:locked?"#f3f4f6":"#fefce8"};
               return <tr key={b.emp.id} className={rowCls} style={{borderBottom:"1px solid "+C.brdLt,background:locked?"#f9fafb":rc}}>
@@ -1333,8 +1340,8 @@ function App(){
     const years=[];for(let y=curYear;y>=2022;y--)years.push(y);
     const otherYears=years.slice(1); /* en yeni hariç */
     const emps=filteredSortedEmps.filter(e=>{
-      if(yiAP==="A"&&e.durum==="K")return false;
-      if(yiAP==="P"&&e.durum!=="K")return false;
+      if(yiAP==="A"&&isPasif(e))return false;
+      if(yiAP==="P"&&!isPasif(e))return false;
       if(yiSearch&&!e.name.toLocaleLowerCase("tr").includes(yiSearch.toLocaleLowerCase("tr")))return false;
       if(yiFirma&&e.firma!==yiFirma)return false;
       if(yiSube&&e.sube!==yiSube)return false;
@@ -1448,7 +1455,7 @@ function App(){
       let rows="";
       filtered.forEach(emp=>{
         const sm=getPSummary(emp);
-        const rBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"";
+        const rBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":isPasif(emp)?"#f3e8ff":"";
         rows+="<tr"+(rBg?" style='background:"+rBg+"'":"")+">";
         rows+="<td><b>"+emp.name+"</b></td><td>"+getEmpIzin(emp)+"</td>";
         for(let d=1;d<=pDays;d++){
@@ -1484,7 +1491,7 @@ function App(){
       else if(code==="CLEAR"){setDb(p=>{const nc={...p.puantajCells};delete nc[key];const ns={...p.puantajSaat};delete ns[key];const nn={...p.puantajNotes};delete nn[key];return{...p,puantajCells:nc,puantajSaat:ns,puantajNotes:nn};},addLog("Puantaj",eName+" Gün "+day+" → Temizlendi"));}
       else{setDb(p=>({...p,puantajCells:{...p.puantajCells,[key]:code}}),addLog("Puantaj",eName+" Gün "+day+" → "+code));}
       setSelCell(null);}
-    const filtered=filteredSortedEmps.filter(emp=>{if(ptAP==="A"&&emp.durum==="K")return false;if(ptAP==="P"&&emp.durum!=="K")return false;if(emp.durum==="K"&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLocaleLowerCase("tr").includes(ptSearch.toLocaleLowerCase("tr")))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
+    const filtered=filteredSortedEmps.filter(emp=>{if(ptAP==="A"&&isPasif(emp))return false;if(ptAP==="P"&&!isPasif(emp))return false;if(isPasif(emp)&&!emp.istenCikis)return false;if(!isEmpInPeriod(emp))return false;if(ptSearch&&!emp.name.toLocaleLowerCase("tr").includes(ptSearch.toLocaleLowerCase("tr")))return false;if(ptF&&emp.firma!==ptF)return false;if(ptS&&emp.sube!==ptS)return false;if(ptDs.length>0&&!ptDs.includes(emp.durum))return false;return true;});
     const legend=[["X","Geldi","#374151"],["-","Gelmedi","#6b7280"],["/","Yarım Gün","#9ca3af"],[".","Ayrıldı","#991b1b"],["M","Mazeret","#0d9488"],["Yİ","Yıllık İzin","#dc2626"],["R","Raporlu","#a16207"],["RT","Resmi Tatil","#2563eb"],["FM","Fazla Mesai","#7c3aed"],["S","Saat","#0d9488"],["O","Ölüm","#374151"],["E","Evlilik","#db2777"],["H","Hastalık","#b45309"]];
 
     function handleBulkApply(){
@@ -1592,7 +1599,7 @@ function App(){
           <th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:35}}>SAAT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:45}}>MESAİ</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:30}}>FM</th><th style={{...thS,textAlign:"center",background:"#dbeafe",minWidth:30}}>RT</th><th style={{...thS,textAlign:"center",background:C.yelBg,minWidth:25}}>Yİ</th><th style={{...thS,textAlign:"center",background:"#fef2f2",minWidth:35}}>Dİ</th>
         </tr></thead><tbody>
           {filtered.map(emp=>{const sm=getPSummary(emp);
-            const rowBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":emp.durum==="K"?"#f3e8ff":"transparent";
+            const rowBg=emp.durum==="E"?"#ecfdf5":emp.durum==="."?"#fefce8":isPasif(emp)?"#f3e8ff":"transparent";
             const stickyBg=rowBg==="transparent"?"#fff":rowBg;
             return <tr key={emp.id} style={{borderBottom:"1px solid "+C.brdLt,background:rowBg}}>
               <td onMouseEnter={e=>{if(emp.foto)setHoverFoto({foto:emp.foto,x:e.clientX+12,y:e.clientY+12});}} onMouseMove={e=>{if(emp.foto)setHoverFoto(h=>h?{...h,x:e.clientX+12,y:e.clientY+12}:null);}} onMouseLeave={()=>setHoverFoto(null)} style={{...tdS,fontWeight:600,position:"sticky",left:0,background:stickyBg,zIndex:1,whiteSpace:"nowrap"}}>{emp.foto&&<span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:C.teal,marginRight:5}}/>}{emp.name}</td>
