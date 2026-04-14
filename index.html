@@ -266,6 +266,12 @@ function App(){
     fetch("/api/data").then(r=>r.json()).then(data=>{
       const merged={...defaultDB,...data};
       if(merged.izinGunleri&&!merged.izinGunleri.includes("Parttime"))merged.izinGunleri=[...merged.izinGunleri,"Parttime"];
+      /* Eski "Avans" kayıtlarını "Avans Gr" olarak migrate et */
+      if(merged.avanslar&&Array.isArray(merged.avanslar)){
+        let needsMig=false;
+        merged.avanslar=merged.avanslar.map(a=>{if(a.type==="Avans"){needsMig=true;return{...a,type:"Avans Gr"};}return a;});
+        if(needsMig){/* Değişikliği geri yaz */setTimeout(()=>{saveDB(merged);},1000);}
+      }
       setDbRaw(merged);
       setLoading(false);
     }).catch(()=>setLoading(false));
@@ -430,7 +436,7 @@ function App(){
     const kapali=isEmpKapali(emp);
     const maas=kapali&&snap?Number(snap.maas):Number(emp.maas);
     const yol=kapali&&snap?Number(snap.yol):Number(emp.yol);
-    const avans1=kapali&&snap?Number(snap.sabitAvans)||0:Number(emp.sabitAvans)||0;
+    const avans1Base=kapali&&snap?Number(snap.sabitAvans)||0:Number(emp.sabitAvans)||0;
     const gunlukUcret=maas/30;const saatUcreti=gunlukUcret/7.5;
     const mesaiT=(ps.saat*saatUcreti)+(ps.mesai*gunlukUcret)+(ps.fm*gunlukUcret)+(ps.rt*gunlukUcret)+(ps.di*gunlukUcret);
     const gunOrani=Math.min(ps.gun,30)/30;
@@ -440,7 +446,9 @@ function App(){
     /* Avansları dönem tarihine göre filtrele */
     const dStart=donemKey+"-01";const dEnd=donemKey+"-"+String(pDays).padStart(2,"0");
     const ea=D.avanslar.filter(a=>a.empId===emp.id&&a.date>=dStart&&a.date<=dEnd);
-    const a2=ea.filter(a=>a.type==="Avans"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>a.type==="Maaş F+"?s+a.amount:s-a.amount,0);
+    const avansR=ea.filter(a=>a.type==="Avans R").reduce((s,a)=>s+a.amount,0);
+    const avans1=avans1Base+avansR;
+    const a2=ea.filter(a=>a.type==="Avans Gr"||a.type==="Kıdem Gr-"||a.type==="İhbar Gr-"||a.type==="Borç Gr-"||a.type==="Maaş F+").reduce((s,a)=>a.type==="Maaş F+"?s+a.amount:s-a.amount,0);
     const ur=-(ea.filter(a=>a.type==="Ürün").reduce((s,a)=>s+a.amount,0));
     const ke=ea.filter(a=>a.type==="Kıdem R-"||a.type==="İhbar R-"||a.type==="Haciz-"||a.type==="Borç R-").reduce((s,a)=>s+a.amount,0);
     const devirPlus=ea.filter(a=>a.type==="Devir+").reduce((s,a)=>s+a.amount,0);
@@ -500,7 +508,7 @@ function App(){
     /* Bölüm bazlı özet */
     const bolumOzet={};dBordro.forEach(b=>{const bl=b.emp.bolum||"Belirtilmemiş";if(!bolumOzet[bl])bolumOzet[bl]={kisi:0,maasT:0,elden:0,kalan:0,a2:0};bolumOzet[bl].kisi++;bolumOzet[bl].maasT+=b.maasT;bolumOzet[bl].elden+=b.elden;bolumOzet[bl].kalan+=b.kalan;bolumOzet[bl].a2+=b.a2;});
     /* Özet kartlar */
-    const totalAvans=D.avanslar.filter(a=>{const dStart=donemKey+"-01";const dEnd=donemKey+"-31";return a.type==="Avans"&&a.date>=dStart&&a.date<=dEnd&&dEmps.some(e=>e.id===a.empId);}).reduce((s,a)=>s+a.amount,0);
+    const totalAvans=D.avanslar.filter(a=>{const dStart=donemKey+"-01";const dEnd=donemKey+"-31";return(a.type==="Avans Gr"||a.type==="Avans R")&&a.date>=dStart&&a.date<=dEnd&&dEmps.some(e=>e.id===a.empId);}).reduce((s,a)=>s+a.amount,0);
     const stats=[
       {Ic:IcUsers,l:"Aktif Personel",v:String(tot.kisi),cl:C.teal},
       {Ic:IcTable,l:"Maaş Toplam",v:fmt(tot.maasT)+" ₺",cl:"#2563eb"},
@@ -876,7 +884,7 @@ function App(){
 
   /* ÖDEME-TAHSİLAT */
   function AvansPage(){
-    const [af,setAf]=useState({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});
+    const [af,setAf]=useState({empId:"",type:"Avans Gr",amount:"",date:new Date().toISOString().slice(0,10),note:""});
     const [editId,setEditId]=useState(null);
     const [avSearch,setAvSearch]=useState("");
     const [avEmp,setAvEmp]=useState("");
@@ -896,18 +904,18 @@ function App(){
     const del=(id)=>{const a=D.avanslar.find(x=>x.id===id);if(!a||!confirm("Silinsin mi?"))return;setDb(p=>({...p,avanslar:p.avanslar.filter(x=>x.id!==id),borcAlacak:applyBA(p.borcAlacak||{},a.empId,a.type,-a.amount)}),addLog(a.type+" Silindi",empName(a.empId)+" → "+fmt(a.amount)+" ₺"));};
     const loadEdit=(a)=>{setAf({empId:String(a.empId),type:a.type,amount:String(a.amount).replace(".",","),date:a.date,note:a.note||""});setEditId(a.id);window.scrollTo({top:0,behavior:"smooth"});};
     const loadCopy=(a)=>{setAf({empId:String(a.empId),type:a.type,amount:String(a.amount).replace(".",","),date:new Date().toISOString().slice(0,10),note:a.note||""});setEditId(null);window.scrollTo({top:0,behavior:"smooth"});};
-    function typeBadge(t){if(t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};if(t.includes("Maaş F"))return{bg:"#fef3c7",cl:"#92400e"};if(t.includes("İhbar"))return{bg:"#fef3c7",cl:"#b45309"};if(t.includes("Kıdem"))return{bg:"#dbeafe",cl:"#2563eb"};if(t.includes("Haciz"))return{bg:C.redBg,cl:C.red};if(t.includes("Borç"))return{bg:"#f3e8ff",cl:"#7c3aed"};return{bg:C.redBg,cl:C.red};}
+    function typeBadge(t){if(t==="Avans Gr"||t==="Avans R"||t==="Avans")return{bg:C.orgBg,cl:C.orange};if(t==="Ürün")return{bg:C.yelBg,cl:"#a16207"};if(t==="Devir+")return{bg:C.grnBg,cl:C.grn};if(t==="Devir-")return{bg:"#fce7f3",cl:"#be185d"};if(t.includes("Maaş F"))return{bg:"#fef3c7",cl:"#92400e"};if(t.includes("İhbar"))return{bg:"#fef3c7",cl:"#b45309"};if(t.includes("Kıdem"))return{bg:"#dbeafe",cl:"#2563eb"};if(t.includes("Haciz"))return{bg:C.redBg,cl:C.red};if(t.includes("Borç"))return{bg:"#f3e8ff",cl:"#7c3aed"};return{bg:C.redBg,cl:C.red};}
     const filteredAvanslar=D.avanslar.filter(a=>{if(!filteredSortedEmps.some(e=>e.id===a.empId))return false;if(avEmp&&a.empId!==Number(avEmp))return false;if(avSearch){const s=avSearch.toLocaleLowerCase("tr");const n=(a.note||"").toLocaleLowerCase("tr");const en=empName(a.empId).toLocaleLowerCase("tr");if(!n.includes(s)&&!en.includes(s))return false;}return true;}).sort((a,b)=>b.date.localeCompare(a.date));
     return <div><Header icon={<IcCard/>} title="Ödeme-Tahsilat" sub="Avans, Ürün, Devir ve kesinti işlemleri"/>
       {can("ekle")&&<div style={{background:C.card,borderRadius:12,padding:"24px 28px",border:"1px solid "+(editId?C.blu:C.cardBrd),marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:700,marginBottom:14,color:editId?C.blu:C.txt}}>{editId?"İşlem Düzenle":"Yeni İşlem Ekle"}</div>
         <div style={{display:"flex",gap:14,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
           <div style={{flex:2}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Personel *</div><select value={af.empId} onChange={e=>setAf({...af,empId:e.target.value})}><option value="">Seçiniz...</option>{filteredSortedEmps.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans</option><option>Ürün</option><option>İhbar R+</option><option>İhbar R-</option><option>İhbar Gr+</option><option>İhbar Gr-</option><option>Kıdem R+</option><option>Kıdem R-</option><option>Kıdem Gr+</option><option>Kıdem Gr-</option><option>Haciz+</option><option>Haciz-</option><option>Borç R+</option><option>Borç R-</option><option>Borç Gr+</option><option>Borç Gr-</option><option>Maaş F+</option><option>Maaş F-</option><option>Devir+</option><option>Devir-</option></select></div>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tür *</div><select value={af.type} onChange={e=>setAf({...af,type:e.target.value})}><option>Avans R</option><option>Avans Gr</option><option>Ürün</option><option>İhbar R+</option><option>İhbar R-</option><option>İhbar Gr+</option><option>İhbar Gr-</option><option>Kıdem R+</option><option>Kıdem R-</option><option>Kıdem Gr+</option><option>Kıdem Gr-</option><option>Haciz+</option><option>Haciz-</option><option>Borç R+</option><option>Borç R-</option><option>Borç Gr+</option><option>Borç Gr-</option><option>Maaş F+</option><option>Maaş F-</option><option>Devir+</option><option>Devir-</option></select></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tutar *</div><input type="text" inputMode="decimal" value={af.amount} onChange={e=>setAf({...af,amount:e.target.value.replace(/[^0-9,.]/g,"")})}/></div>
           <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Tarih *</div><input type="date" value={af.date} onChange={e=>setAf({...af,date:e.target.value})}/></div>
           <Btn bg={editId?C.blu:"#e11d48"} onClick={save} style={{height:42}}>{editId?<><IcSave/> Güncelle</>:"Ekle"}</Btn>
-          {editId&&<Btn bg="#6b7280" onClick={()=>{setEditId(null);setAf({empId:"",type:"Avans",amount:"",date:new Date().toISOString().slice(0,10),note:""});}} style={{height:42}}><IcX/> İptal</Btn>}
+          {editId&&<Btn bg="#6b7280" onClick={()=>{setEditId(null);setAf({empId:"",type:"Avans Gr",amount:"",date:new Date().toISOString().slice(0,10),note:""});}} style={{height:42}}><IcX/> İptal</Btn>}
         </div>
         <div><div style={{fontSize:12,fontWeight:600,color:C.sec,marginBottom:4}}>Açıklama</div><input value={af.note} onChange={e=>setAf({...af,note:e.target.value})} placeholder="İsteğe bağlı açıklama..."/></div>
       </div>}
