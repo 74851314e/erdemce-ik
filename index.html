@@ -251,6 +251,7 @@ function App(){
   const [pSearch,setPSearch]=useState("");const [pFirma,setPFirma]=useState("");const [pSube,setPSube]=useState("");const [pAP,setPAP]=useState("A");
   const [ptSearch,setPtSearch]=useState("");const [ptF,setPtF]=useState("");const [ptS,setPtS]=useState("");const [ptDs,setPtDs]=useState([]);const [ptDurDrop,setPtDurDrop]=useState(false);const [selCell,setSelCell]=useState(null);const [ptAP,setPtAP]=useState("A");
   const [bFirma,setBFirma]=useState("");const [bSube,setBSube]=useState("");const [bSearch,setBSearch]=useState("");const [bDs,setBDs]=useState([]);const [bDurDrop,setBDurDrop]=useState(false);const [bKalanF,setBKalanF]=useState("");const [bAP,setBAP]=useState("A");
+  const [yiSearch,setYiSearch]=useState("");const [yiFirma,setYiFirma]=useState("");const [yiSube,setYiSube]=useState("");const [yiDurum,setYiDurum]=useState("");const [yiAP,setYiAP]=useState("A");
   const [bulkPt,setBulkPt]=useState({show:false,code:"X",dayStart:1,dayEnd:31,sebep:"",saat:1});
   /* Kullanıcı düzenleme state'leri (App seviyesinde — page remount'ta kaybolmasın) */
   const [editUid,setEditUid]=useState(null);
@@ -1331,11 +1332,6 @@ function App(){
   /* YILLIK İZİN */
   function YillikIzinPage(){
     const [hoverInfo,setHoverInfo]=useState(null);
-    const [yiSearch,setYiSearch]=useState("");
-    const [yiFirma,setYiFirma]=useState("");
-    const [yiSube,setYiSube]=useState("");
-    const [yiDurum,setYiDurum]=useState("");
-    const [yiAP,setYiAP]=useState("A"); /* A=Aktif (default), P=Pasif */
     const curYear=new Date().getFullYear();
     const years=[];for(let y=curYear;y>=2022;y--)years.push(y);
     const otherYears=years.slice(1); /* en yeni hariç */
@@ -1571,16 +1567,16 @@ function App(){
             </select>
           </div>
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Başlangıç Gün</div>
-            <input type="number" min="1" max={pDays} value={bulkPt.dayStart} onChange={e=>setBulkPt({...bulkPt,dayStart:e.target.value})} style={{width:70}}/>
+            <input type="number" min="1" max={pDays} defaultValue={bulkPt.dayStart} key={"ds"+bulkPt.show} onBlur={e=>setBulkPt(p=>({...p,dayStart:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{width:70}}/>
           </div>
           <div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Bitiş Gün</div>
-            <input type="number" min="1" max={pDays} value={bulkPt.dayEnd} onChange={e=>setBulkPt({...bulkPt,dayEnd:e.target.value})} style={{width:70}}/>
+            <input type="number" min="1" max={pDays} defaultValue={bulkPt.dayEnd} key={"de"+bulkPt.show} onBlur={e=>setBulkPt(p=>({...p,dayEnd:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{width:70}}/>
           </div>
           {(bulkPt.code==="-"||bulkPt.code==="/")&&<div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Sebep</div>
-            <input value={bulkPt.sebep} onChange={e=>setBulkPt({...bulkPt,sebep:e.target.value})} placeholder="Sebep girin..." style={{width:180}}/>
+            <input defaultValue={bulkPt.sebep} key={"sb"+bulkPt.show+bulkPt.code} onBlur={e=>setBulkPt(p=>({...p,sebep:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} placeholder="Sebep girin..." style={{width:180}}/>
           </div>}
           {bulkPt.code==="S"&&<div><div style={{fontSize:11,fontWeight:600,color:C.sec,marginBottom:4}}>Saat</div>
-            <input type="number" min="1" value={bulkPt.saat} onChange={e=>setBulkPt({...bulkPt,saat:e.target.value})} style={{width:70}}/>
+            <input type="number" min="1" defaultValue={bulkPt.saat} key={"st"+bulkPt.show+bulkPt.code} onBlur={e=>setBulkPt(p=>({...p,saat:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{width:70}}/>
           </div>}
           <Btn bg={C.pur} onClick={handleBulkApply} style={{height:42}}><IcCheck/> Uygula ({filtered.length} kişi)</Btn>
           <Btn bg="#6b7280" onClick={()=>setBulkPt({...bulkPt,show:false})} style={{height:42,fontSize:12}}><IcX/> Kapat</Btn>
